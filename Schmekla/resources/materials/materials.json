@@ -1,0 +1,72 @@
+{
+  "S355": {
+    "description": "Structural steel grade S355",
+    "category": "Steel",
+    "density": 7850,
+    "elastic_modulus": 210000,
+    "poisson_ratio": 0.3,
+    "yield_strength": 355,
+    "ultimate_strength": 470,
+    "color": [0.6, 0.6, 0.65]
+  },
+  "S275": {
+    "description": "Structural steel grade S275",
+    "category": "Steel",
+    "density": 7850,
+    "elastic_modulus": 210000,
+    "poisson_ratio": 0.3,
+    "yield_strength": 275,
+    "ultimate_strength": 430,
+    "color": [0.6, 0.6, 0.65]
+  },
+  "S235": {
+    "description": "Structural steel grade S235",
+    "category": "Steel",
+    "density": 7850,
+    "elastic_modulus": 210000,
+    "poisson_ratio": 0.3,
+    "yield_strength": 235,
+    "ultimate_strength": 360,
+    "color": [0.6, 0.6, 0.65]
+  },
+  "S460": {
+    "description": "High strength structural steel S460",
+    "category": "Steel",
+    "density": 7850,
+    "elastic_modulus": 210000,
+    "poisson_ratio": 0.3,
+    "yield_strength": 460,
+    "ultimate_strength": 540,
+    "color": [0.5, 0.5, 0.6]
+  },
+  "C30/37": {
+    "description": "Concrete grade C30/37",
+    "category": "Concrete",
+    "density": 2400,
+    "elastic_modulus": 33000,
+    "poisson_ratio": 0.2,
+    "yield_strength": 30,
+    "ultimate_strength": 37,
+    "color": [0.7, 0.7, 0.7]
+  },
+  "C40/50": {
+    "description": "Concrete grade C40/50",
+    "category": "Concrete",
+    "density": 2400,
+    "elastic_modulus": 35000,
+    "poisson_ratio": 0.2,
+    "yield_strength": 40,
+    "ultimate_strength": 50,
+    "color": [0.65, 0.65, 0.65]
+  },
+  "C50/60": {
+    "description": "High strength concrete C50/60",
+    "category": "Concrete",
+    "density": 2450,
+    "elastic_modulus": 37000,
+    "poisson_ratio": 0.2,
+    "yield_strength": 50,
+    "ultimate_strength": 60,
+    "color": [0.6, 0.6, 0.6]
+  }
+}

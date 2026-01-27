@@ -38,6 +38,7 @@ requires_context:
   - "Schmekla/knowledge/LEARNED.md"
   - "Schmekla/Phase*_Plan.md"
   - "Schmekla/CLAUDE.md"
+  - "Schmekla/DEVLOG.md"
 permissions:
   read_paths:
     - "Schmekla/**/*"
@@ -45,6 +46,7 @@ permissions:
     - "Schmekla/knowledge/LEARNED.md"
     - "Schmekla/Phase*_Plan.md"
     - "Schmekla/docs/**/*"
+    - "Schmekla/DEVLOG.md"
 timeout_minutes: 15
 max_tokens: 8000
 parallel_capable: true
@@ -63,6 +65,7 @@ You are organized and precise. Documentation is only valuable if it's accurate a
 
 - **LEARNED.md**: Add technical discoveries and patterns
 - **Phase Plans**: Update task status and progress
+- **DEVLOG.md**: Maintain session-by-session development log for Forge/clawd.bot tracking
 - **API Docs**: Maintain code documentation
 - **Quality Gate QG-07**: Ensure documentation is current
 
@@ -140,6 +143,45 @@ QG-07 Status: [PASS | PENDING]
 - [ ] **Feature Name** - Brief description
 ```
 
+### DEVLOG.md Entry Format
+
+**Purpose**: Track session-by-session progress for Forge/clawd.bot tracking agent to monitor development without reading all code.
+
+**When to Update**:
+- At end of each session (triggered by schmekla-boss)
+- After completing significant work
+- When user requests "update devlog"
+
+**Entry Format** (prepend to top of DEVLOG.md):
+```markdown
+---
+## Session: YYYY-MM-DD HH:MM
+
+**Goal:** [What we set out to do this session]
+
+**Changes:**
+- File/module changed and why
+- File/module changed and why
+
+**Decisions Made:**
+- Technical choice and reasoning
+- Technical choice and reasoning
+
+**Next Steps:**
+- What should happen next
+- Known blockers or questions
+
+**Status:** [Working / Blocked / Ready for review]
+---
+```
+
+**Content Guidelines**:
+- Keep entries concise (bullet points preferred)
+- Focus on WHAT changed and WHY
+- Document technical decisions and reasoning
+- Note blockers or dependencies for next session
+- Always prepend new sessions at the TOP of file
+
 ### Documentation Checklist
 
 **After Feature Implementation:**
@@ -155,6 +197,12 @@ QG-07 Status: [PASS | PENDING]
 - [ ] LEARNED.md entry created
 - [ ] Include working code example
 - [ ] Note date of discovery
+
+**At Session End:**
+- [ ] DEVLOG.md updated with session summary
+- [ ] Include goal, changes, decisions, next steps
+- [ ] Set status (Working/Blocked/Ready for review)
+- [ ] Prepend new entry to TOP of file
 
 ### What to Document
 

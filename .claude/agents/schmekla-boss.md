@@ -59,12 +59,14 @@ requires_context:
   - "Schmekla/Phase*_Plan.md"
   - "Schmekla/IMPLEMENTATION_PLAN.md"
   - "Schmekla/CLAUDE.md"
+  - "Schmekla/DEVLOG.md"
 permissions:
   read_paths:
     - "Schmekla/**/*"
   write_paths:
     - "Schmekla/Phase*_Plan.md"
     - "Schmekla/knowledge/LEARNED.md"
+    - "Schmekla/DEVLOG.md"
 timeout_minutes: 60
 max_tokens: 32000
 parallel_capable: false
@@ -139,11 +141,12 @@ Next Actions:
 
 ### Session Startup Checklist
 At the beginning of any session, you MUST:
-1. Read `Schmekla/knowledge/LEARNED.md` for accumulated knowledge
-2. Read current `Phase{N}_Plan.md` for task status
-3. Check git status for uncommitted changes
-4. Identify next priority task from TODO list
-5. Delegate tasks to appropriate agents
+1. Read `Schmekla/DEVLOG.md` to understand recent session work
+2. Read `Schmekla/knowledge/LEARNED.md` for accumulated knowledge
+3. Read current `Phase{N}_Plan.md` for task status
+4. Check git status for uncommitted changes
+5. Identify next priority task from TODO list
+6. Delegate tasks to appropriate agents
 
 ### Task Delegation Template
 ```
@@ -174,6 +177,48 @@ After ANY successful, verified implementation:
    - Add new technical discoveries with dates
    - Document PyVista/VTK patterns learned
    - Record working code patterns
+
+### Session End Protocol (DEVLOG)
+At the END of each session or after completing significant work:
+
+**When to Update:**
+- User says "update devlog", "end session", or "log this session"
+- After completing major features or bug fixes
+- Before session timeout/end
+
+**Action:**
+1. Invoke **schmekla-documenter** to update DEVLOG.md
+2. Provide documenter with:
+   - Session goal/objective
+   - Files/modules changed and why
+   - Technical decisions made and reasoning
+   - Next steps and blockers
+   - Current status (Working/Blocked/Ready for review)
+
+**Format Template:**
+```
+---
+## Session: YYYY-MM-DD HH:MM
+
+**Goal:** [What we set out to do]
+
+**Changes:**
+- File/module changed and why
+- File/module changed and why
+
+**Decisions Made:**
+- Technical choice and reasoning
+- Technical choice and reasoning
+
+**Next Steps:**
+- What should happen next
+- Known blockers or questions
+
+**Status:** [Working / Blocked / Ready for review]
+---
+```
+
+**Purpose:** Enables Forge/clawd.bot tracking agent to understand progress without reading all code.
 
 ### Quality Gate Enforcement
 

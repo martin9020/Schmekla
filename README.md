@@ -1,392 +1,272 @@
-# Everything Claude Code
+# Schmekla
 
-[![Stars](https://img.shields.io/github/stars/affaan-m/everything-claude-code?style=flat)](https://github.com/affaan-m/everything-claude-code/stargazers)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-![Shell](https://img.shields.io/badge/-Shell-4EAA25?logo=gnu-bash&logoColor=white)
-![TypeScript](https://img.shields.io/badge/-TypeScript-3178C6?logo=typescript&logoColor=white)
-![Markdown](https://img.shields.io/badge/-Markdown-000000?logo=markdown&logoColor=white)
+**Structural Modeling Application with AI-Assisted Design**
 
-**The complete collection of Claude Code configs from an Anthropic hackathon winner.**
+Schmekla is a custom structural modeling application that creates 3D steel and concrete models, exports to IFC format for Tekla Structures compatibility, and features Claude Code CLI integration for natural language model creation and automatic model generation from plan drawings.
 
-Production-ready agents, skills, hooks, commands, rules, and MCP configurations evolved over 10+ months of intensive daily use building real products.
+## Features
 
----
+- **3D Structural Modeling**: Create beams, columns, plates, slabs, walls, and footings
+- **IFC Export**: Export models to IFC2X3 format for Tekla import
+- **AI-Assisted Design**: Use natural language prompts to create and modify models
+- **Plan Import**: Upload structural drawings and auto-generate models using Claude's vision
+- **Parametric Components**: Pre-built portal frames, bracing systems, and floor layouts
+- **UK Steel Sections**: Full catalog of UK structural steel profiles
 
-## The Guides
+## Quick Start
 
-This repo is the raw code only. The guides explain everything.
+### Prerequisites
 
-<table>
-<tr>
-<td width="50%">
-<a href="https://x.com/affaanmustafa/status/2012378465664745795">
-<img src="https://github.com/user-attachments/assets/1a471488-59cc-425b-8345-5245c7efbcef" alt="The Shorthand Guide to Everything Claude Code" />
-</a>
-</td>
-<td width="50%">
-<a href="https://x.com/affaanmustafa/status/2014040193557471352">
-<img src="https://github.com/user-attachments/assets/c9ca43bc-b149-427f-b551-af6840c368f0" alt="The Longform Guide to Everything Claude Code" />
-</a>
-</td>
-</tr>
-<tr>
-<td align="center"><b>Shorthand Guide</b><br/>Setup, foundations, philosophy. <b>Read this first.</b></td>
-<td align="center"><b>Longform Guide</b><br/>Token optimization, memory persistence, evals, parallelization.</td>
-</tr>
-</table>
+- Python 3.11 or higher
+- Windows 10/11 (primary target)
+- Claude Code CLI installed (for AI features)
 
-| Topic | What You'll Learn |
-|-------|-------------------|
-| Token Optimization | Model selection, system prompt slimming, background processes |
-| Memory Persistence | Hooks that save/load context across sessions automatically |
-| Continuous Learning | Auto-extract patterns from sessions into reusable skills |
-| Verification Loops | Checkpoint vs continuous evals, grader types, pass@k metrics |
-| Parallelization | Git worktrees, cascade method, when to scale instances |
-| Subagent Orchestration | The context problem, iterative retrieval pattern |
+### Installation
 
----
-
-## Cross-Platform Support
-
-This plugin now fully supports **Windows, macOS, and Linux**. All hooks and scripts have been rewritten in Node.js for maximum compatibility.
-
-### Package Manager Detection
-
-The plugin automatically detects your preferred package manager (npm, pnpm, yarn, or bun) with the following priority:
-
-1. **Environment variable**: `CLAUDE_PACKAGE_MANAGER`
-2. **Project config**: `.claude/package-manager.json`
-3. **package.json**: `packageManager` field
-4. **Lock file**: Detection from package-lock.json, yarn.lock, pnpm-lock.yaml, or bun.lockb
-5. **Global config**: `~/.claude/package-manager.json`
-6. **Fallback**: First available package manager
-
-To set your preferred package manager:
+**Option 1: Automatic Install (Windows)**
 
 ```bash
-# Via environment variable
-export CLAUDE_PACKAGE_MANAGER=pnpm
+# Navigate to Schmekla folder
+cd Schmekla
 
-# Via global config
-node scripts/setup-package-manager.js --global pnpm
-
-# Via project config
-node scripts/setup-package-manager.js --project bun
-
-# Detect current setting
-node scripts/setup-package-manager.js --detect
+# Run the install script
+deploy\install.bat
 ```
 
-Or use the `/setup-pm` command in Claude Code.
+This creates a virtual environment, installs dependencies, and creates `run_schmekla.bat`.
 
----
-
-## What's Inside
-
-This repo is a **Claude Code plugin** - install it directly or copy components manually.
-
-```
-everything-claude-code/
-|-- .claude-plugin/   # Plugin and marketplace manifests
-|   |-- plugin.json         # Plugin metadata and component paths
-|   |-- marketplace.json    # Marketplace catalog for /plugin marketplace add
-|
-|-- agents/           # Specialized subagents for delegation
-|   |-- planner.md           # Feature implementation planning
-|   |-- architect.md         # System design decisions
-|   |-- tdd-guide.md         # Test-driven development
-|   |-- code-reviewer.md     # Quality and security review
-|   |-- security-reviewer.md # Vulnerability analysis
-|   |-- build-error-resolver.md
-|   |-- e2e-runner.md        # Playwright E2E testing
-|   |-- refactor-cleaner.md  # Dead code cleanup
-|   |-- doc-updater.md       # Documentation sync
-|
-|-- skills/           # Workflow definitions and domain knowledge
-|   |-- coding-standards/           # Language best practices
-|   |-- backend-patterns/           # API, database, caching patterns
-|   |-- frontend-patterns/          # React, Next.js patterns
-|   |-- continuous-learning/        # Auto-extract patterns from sessions (Longform Guide)
-|   |-- strategic-compact/          # Manual compaction suggestions (Longform Guide)
-|   |-- tdd-workflow/               # TDD methodology
-|   |-- security-review/            # Security checklist
-|   |-- eval-harness/               # Verification loop evaluation (Longform Guide)
-|   |-- verification-loop/          # Continuous verification (Longform Guide)
-|
-|-- commands/         # Slash commands for quick execution
-|   |-- tdd.md              # /tdd - Test-driven development
-|   |-- plan.md             # /plan - Implementation planning
-|   |-- e2e.md              # /e2e - E2E test generation
-|   |-- code-review.md      # /code-review - Quality review
-|   |-- build-fix.md        # /build-fix - Fix build errors
-|   |-- refactor-clean.md   # /refactor-clean - Dead code removal
-|   |-- learn.md            # /learn - Extract patterns mid-session (Longform Guide)
-|   |-- checkpoint.md       # /checkpoint - Save verification state (Longform Guide)
-|   |-- verify.md           # /verify - Run verification loop (Longform Guide)
-|   |-- setup-pm.md         # /setup-pm - Configure package manager (NEW)
-|
-|-- rules/            # Always-follow guidelines (copy to ~/.claude/rules/)
-|   |-- security.md         # Mandatory security checks
-|   |-- coding-style.md     # Immutability, file organization
-|   |-- testing.md          # TDD, 80% coverage requirement
-|   |-- git-workflow.md     # Commit format, PR process
-|   |-- agents.md           # When to delegate to subagents
-|   |-- performance.md      # Model selection, context management
-|
-|-- hooks/            # Trigger-based automations
-|   |-- hooks.json                # All hooks config (PreToolUse, PostToolUse, Stop, etc.)
-|   |-- memory-persistence/       # Session lifecycle hooks (Longform Guide)
-|   |-- strategic-compact/        # Compaction suggestions (Longform Guide)
-|
-|-- scripts/          # Cross-platform Node.js scripts (NEW)
-|   |-- lib/                     # Shared utilities
-|   |   |-- utils.js             # Cross-platform file/path/system utilities
-|   |   |-- package-manager.js   # Package manager detection and selection
-|   |-- hooks/                   # Hook implementations
-|   |   |-- session-start.js     # Load context on session start
-|   |   |-- session-end.js       # Save state on session end
-|   |   |-- pre-compact.js       # Pre-compaction state saving
-|   |   |-- suggest-compact.js   # Strategic compaction suggestions
-|   |   |-- evaluate-session.js  # Extract patterns from sessions
-|   |-- setup-package-manager.js # Interactive PM setup
-|
-|-- tests/            # Test suite (NEW)
-|   |-- lib/                     # Library tests
-|   |-- hooks/                   # Hook tests
-|   |-- run-all.js               # Run all tests
-|
-|-- contexts/         # Dynamic system prompt injection contexts (Longform Guide)
-|   |-- dev.md              # Development mode context
-|   |-- review.md           # Code review mode context
-|   |-- research.md         # Research/exploration mode context
-|
-|-- examples/         # Example configurations and sessions
-|   |-- CLAUDE.md           # Example project-level config
-|   |-- user-CLAUDE.md      # Example user-level config
-|
-|-- mcp-configs/      # MCP server configurations
-|   |-- mcp-servers.json    # GitHub, Supabase, Vercel, Railway, etc.
-|
-|-- marketplace.json  # Self-hosted marketplace config (for /plugin marketplace add)
-```
-
----
-
-## Installation
-
-### Option 1: Install as Plugin (Recommended)
-
-The easiest way to use this repo - install as a Claude Code plugin:
+**Option 2: Manual Install**
 
 ```bash
-# Add this repo as a marketplace
-/plugin marketplace add affaan-m/everything-claude-code
+# Clone or download the repository
+cd Schmekla
 
-# Install the plugin
-/plugin install everything-claude-code@everything-claude-code
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment
+venv\Scripts\activate  # Windows
+# or: source venv/bin/activate  # Linux/Mac
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the application
+python -m src.main
 ```
 
-Or add directly to your `~/.claude/settings.json`:
+### Deploying to Another PC
 
-```json
-{
-  "extraKnownMarketplaces": {
-    "everything-claude-code": {
-      "source": {
-        "source": "github",
-        "repo": "affaan-m/everything-claude-code"
-      }
-    }
-  },
-  "enabledPlugins": {
-    "everything-claude-code@everything-claude-code": true
-  }
-}
+⚠️ **IMPORTANT**: The `venv/` folder contains paths specific to your machine and is NOT portable.
+
+To deploy Schmekla to another computer:
+
+1. **Copy these folders/files** (exclude `venv/`):
+   ```
+   Schmekla/
+   ├── src/
+   ├── resources/
+   ├── deploy/
+   ├── requirements.txt
+   ├── pyproject.toml
+   └── ... (other files, but NOT venv/)
+   ```
+
+2. **On the target PC**, run:
+   ```bash
+   cd Schmekla
+   deploy\install.bat
+   ```
+   Or manually create a new venv and install dependencies.
+
+3. **For Claude CLI features**, also install:
+   ```bash
+   npm install -g @anthropic-ai/claude-code
+   ```
+
+## Usage
+
+### Creating Elements Manually
+
+1. **Via UI Dialogs**: Use the toolbar buttons or Modeling menu
+   - `B` - Create Beam
+   - `C` - Create Column
+   - `P` - Create Plate
+   - `G` - Create Grid
+
+2. **Via Claude Terminal**: Open with `Ctrl+`` and type commands
+
+### Importing from Plan Drawings (NEW)
+
+The most powerful feature - auto-generate models from your drawings:
+
+1. Go to **Claude > Import Plan...** (or `Ctrl+I`)
+2. Select a plan image (PNG, JPG, or PDF)
+3. Choose the plan type (Floor Plan, Elevation, Grid Layout, etc.)
+4. Click **Analyze & Build Model**
+5. Claude will:
+   - Detect grid lines and spacings
+   - Identify column positions at grid intersections
+   - Recognize beam layouts
+   - Create all elements automatically
+
+### Claude Natural Language Commands
+
+Open the Claude terminal (`Ctrl+``) and type:
+
+```
+"Create a beam from 0,0,0 to 6000,0,0 using UB 305x165x40"
+"Add a column at 0,0,0 with height 4000 using UC 203x203x46"
+"Create a portal frame 12 meters wide and 6 meters high"
+"Create a floor slab from 0,0,3500 with width 12000 and length 18000"
+"Add a shear wall from 0,0,0 to 6000,0,0 height 3500 thickness 200"
+"Create a pad footing at 0,0,0 size 1500x1500 depth 500"
 ```
 
-This gives you instant access to all commands, agents, skills, and hooks.
+### Exporting to IFC for Tekla
 
----
+1. File > Export IFC... (or `Ctrl+E`)
+2. Configure settings:
+   - IFC Schema: IFC2X3 (recommended for Tekla)
+   - Export options
+3. Click **Export**
 
-### Option 2: Manual Installation
+### Importing to Tekla Structures
 
-If you prefer manual control over what's installed:
+1. In Tekla: **File > Import > Insert reference model**
+2. Select the exported `.ifc` file
+3. To convert to native objects:
+   - **Manage > Convert IFC objects**
+   - Select objects and click **Convert**
+
+## Project Structure
+
+```
+Schmekla/
+├── src/
+│   ├── core/               # Data models
+│   │   ├── beam.py         # Beam element
+│   │   ├── column.py       # Column element
+│   │   ├── plate.py        # Plate element
+│   │   ├── slab.py         # Slab element
+│   │   ├── wall.py         # Wall element
+│   │   ├── footing.py      # Footing element
+│   │   ├── profile.py      # Section profiles
+│   │   └── material.py     # Materials
+│   ├── geometry/           # 3D geometry operations
+│   ├── ui/                 # PySide6 user interface
+│   │   ├── main_window.py  # Main application window
+│   │   ├── viewport.py     # 3D PyVista viewport
+│   │   └── dialogs/        # Creation dialogs
+│   ├── ifc/                # IFC export engine
+│   │   ├── exporter.py     # Main exporter
+│   │   ├── ifc_beam.py     # Beam IFC mapping
+│   │   ├── ifc_column.py   # Column IFC mapping
+│   │   └── ...             # Other element mappers
+│   └── claude_integration/ # AI integration
+│       ├── claude_bridge.py    # Claude CLI bridge
+│       └── plan_analyzer.py    # Plan image analysis
+├── resources/
+│   ├── profiles/           # Steel section catalogs (JSON)
+│   └── materials/          # Material databases (JSON)
+├── tests/                  # Test suite
+└── docs/                   # Documentation
+```
+
+## Supported Elements
+
+| Element | Description | IFC Entity | Tekla Conversion |
+|---------|-------------|------------|------------------|
+| Beam | Horizontal/inclined linear member | IfcBeam | Native Beam |
+| Column | Vertical linear member | IfcColumn | Native Column |
+| Plate | Flat steel plate | IfcPlate | Native Plate |
+| Slab | Floor/roof slab | IfcSlab | Native Slab |
+| Wall | Vertical wall | IfcWall | Native Wall |
+| Footing | Foundation pad/strip | IfcFooting | Native Footing |
+
+## Available Profiles
+
+### UK I-Sections
+- UB 305x165x40, UB 406x178x54, etc.
+- UC 203x203x46, UC 254x254x73, etc.
+
+### Hollow Sections
+- SHS 100x100x5, SHS 150x150x8
+- RHS 200x100x6
+- CHS 168.3x7.1
+
+### Channels
+- PFC 200x90x30
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+N` | New model |
+| `Ctrl+O` | Open model |
+| `Ctrl+S` | Save model |
+| `Ctrl+E` | Export IFC |
+| `Ctrl+I` | Import Plan |
+| `Ctrl+Space` | Claude prompt |
+| `Ctrl+`` | Toggle Claude terminal |
+| `B` | Create beam |
+| `C` | Create column |
+| `P` | Create plate |
+| `G` | Create grid |
+| `F` | Zoom to fit |
+| `1` | Front view |
+| `2` | Top view |
+| `3` | Right view |
+| `0` | Isometric view |
+
+## Workflow: From Drawing to Tekla
+
+1. **Prepare your drawing**: Scan or export floor plan as PNG/JPG
+2. **Import in Schmekla**: Claude > Import Plan
+3. **Review generated model**: Check elements in 3D viewport
+4. **Make adjustments**: Add/modify elements as needed
+5. **Export to IFC**: File > Export IFC
+6. **Import to Tekla**: Insert as reference model, then convert
+
+## Limitations
+
+- **Connections**: Bolts, welds, and connections cannot be exported (add in Tekla)
+- **Reinforcement**: Rebar must be added in Tekla
+- **Drawings**: Drawing generation is handled by Tekla
+- **Complex geometry**: Some curved/complex shapes may need simplification
+
+## Technology Stack
+
+- **Python 3.11+**: Core language
+- **PySide6**: Qt-based desktop UI
+- **PyVista + VTK**: 3D visualization
+- **IfcOpenShell**: IFC file generation
+- **Claude Code CLI**: AI integration
+
+## Development
+
+See [CLAUDE.md](CLAUDE.md) for development guidelines.
+
+### Running Tests
 
 ```bash
-# Clone the repo
-git clone https://github.com/affaan-m/everything-claude-code.git
-
-# Copy agents to your Claude config
-cp everything-claude-code/agents/*.md ~/.claude/agents/
-
-# Copy rules
-cp everything-claude-code/rules/*.md ~/.claude/rules/
-
-# Copy commands
-cp everything-claude-code/commands/*.md ~/.claude/commands/
-
-# Copy skills
-cp -r everything-claude-code/skills/* ~/.claude/skills/
+pytest
+pytest --cov=src  # with coverage
 ```
 
-#### Add hooks to settings.json
-
-Copy the hooks from `hooks/hooks.json` to your `~/.claude/settings.json`.
-
-#### Configure MCPs
-
-Copy desired MCP servers from `mcp-configs/mcp-servers.json` to your `~/.claude.json`.
-
-**Important:** Replace `YOUR_*_HERE` placeholders with your actual API keys.
-
----
-
-## Key Concepts
-
-### Agents
-
-Subagents handle delegated tasks with limited scope. Example:
-
-```markdown
----
-name: code-reviewer
-description: Reviews code for quality, security, and maintainability
-tools: Read, Grep, Glob, Bash
-model: opus
----
-
-You are a senior code reviewer...
-```
-
-### Skills
-
-Skills are workflow definitions invoked by commands or agents:
-
-```markdown
-# TDD Workflow
-
-1. Define interfaces first
-2. Write failing tests (RED)
-3. Implement minimal code (GREEN)
-4. Refactor (IMPROVE)
-5. Verify 80%+ coverage
-```
-
-### Hooks
-
-Hooks fire on tool events. Example - warn about console.log:
-
-```json
-{
-  "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\\\.(ts|tsx|js|jsx)$\"",
-  "hooks": [{
-    "type": "command",
-    "command": "#!/bin/bash\ngrep -n 'console\\.log' \"$file_path\" && echo '[Hook] Remove console.log' >&2"
-  }]
-}
-```
-
-### Rules
-
-Rules are always-follow guidelines. Keep them modular:
-
-```
-~/.claude/rules/
-  security.md      # No hardcoded secrets
-  coding-style.md  # Immutability, file limits
-  testing.md       # TDD, coverage requirements
-```
-
----
-
-## Running Tests
-
-The plugin includes a comprehensive test suite:
+### Building Executable
 
 ```bash
-# Run all tests
-node tests/run-all.js
-
-# Run individual test files
-node tests/lib/utils.test.js
-node tests/lib/package-manager.test.js
-node tests/hooks/hooks.test.js
+pip install pyinstaller
+pyinstaller --onefile --windowed src/main.py --name Schmekla
 ```
-
----
-
-## Contributing
-
-**Contributions are welcome and encouraged.**
-
-This repo is meant to be a community resource. If you have:
-- Useful agents or skills
-- Clever hooks
-- Better MCP configurations
-- Improved rules
-
-Please contribute! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-### Ideas for Contributions
-
-- Language-specific skills (Python, Go, Rust patterns)
-- Framework-specific configs (Django, Rails, Laravel)
-- DevOps agents (Kubernetes, Terraform, AWS)
-- Testing strategies (different frameworks)
-- Domain-specific knowledge (ML, data engineering, mobile)
-
----
-
-## Background
-
-I've been using Claude Code since the experimental rollout. Won the Anthropic x Forum Ventures hackathon in Sep 2025 building [zenith.chat](https://zenith.chat) with [@DRodriguezFX](https://x.com/DRodriguezFX) - entirely using Claude Code.
-
-These configs are battle-tested across multiple production applications.
-
----
-
-## Important Notes
-
-### Context Window Management
-
-**Critical:** Don't enable all MCPs at once. Your 200k context window can shrink to 70k with too many tools enabled.
-
-Rule of thumb:
-- Have 20-30 MCPs configured
-- Keep under 10 enabled per project
-- Under 80 tools active
-
-Use `disabledMcpServers` in project config to disable unused ones.
-
-### Customization
-
-These configs work for my workflow. You should:
-1. Start with what resonates
-2. Modify for your stack
-3. Remove what you don't use
-4. Add your own patterns
-
----
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=affaan-m/everything-claude-code&type=Date)](https://star-history.com/#affaan-m/everything-claude-code&Date)
-
----
-
-## Links
-
-- **Shorthand Guide (Start Here):** [The Shorthand Guide to Everything Claude Code](https://x.com/affaanmustafa/status/2012378465664745795)
-- **Longform Guide (Advanced):** [The Longform Guide to Everything Claude Code](https://x.com/affaanmustafa/status/2014040193557471352)
-- **Follow:** [@affaanmustafa](https://x.com/affaanmustafa)
-- **zenith.chat:** [zenith.chat](https://zenith.chat)
-
----
 
 ## License
 
-MIT - Use freely, modify as needed, contribute back if you can.
+Proprietary - Internal use only
 
----
+## Acknowledgments
 
-**Star this repo if it helps. Read both guides. Build something great.**
+- IfcOpenShell for IFC support
+- PyVista for 3D visualization
+- Anthropic for Claude AI

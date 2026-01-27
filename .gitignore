@@ -1,29 +1,42 @@
-# Environment files
-.env
-.env.local
-.env.*.local
+# Virtual environment - DO NOT COPY TO OTHER PCs
+venv/
+.venv/
+env/
 
-# API keys
-*.key
-*.pem
-secrets.json
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
 
-# OS files
-.DS_Store
-Thumbs.db
-
-# Editor files
+# IDE
 .idea/
 .vscode/
 *.swp
 *.swo
 
-# Node
-node_modules/
+# Build artifacts
+build/
+dist/
+*.egg-info/
+*.egg
 
-# Personal configs (if any)
-personal/
-private/
+# Output files
+output/
+*.ifc
 
-# Session templates (not committed)
-examples/sessions/*.tmp
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local settings (contains machine-specific paths)
+.claude/settings.local.json
+
+# Temporary files
+*.tmp
+*.temp
+~*

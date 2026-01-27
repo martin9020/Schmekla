@@ -193,6 +193,40 @@ class Plate(StructuralElement):
             "Holes": len(self.holes),
         }
 
+    def _calculate_geometry_key(self, tolerance: float = 1.0) -> str:
+        """
+        Calculate geometry key for plate based on dimensions.
+
+        Plates with the same dimensions and thickness are considered
+        geometrically identical for Tekla-style numbering.
+
+        Args:
+            tolerance: Rounding tolerance in mm
+
+        Returns:
+            Geometry key string like "W600_L400_T10"
+        """
+        # Calculate bounding dimensions from points
+        xs = [p.x for p in self.points]
+        ys = [p.y for p in self.points]
+        width = max(xs) - min(xs)
+        length = max(ys) - min(ys)
+        rounded_w = round(width / tolerance) * tolerance
+        rounded_l = round(length / tolerance) * tolerance
+        rounded_t = round(self.thickness / tolerance) * tolerance
+        return f"W{rounded_w:.0f}_L{rounded_l:.0f}_T{rounded_t:.0f}"
+
+    def _get_rotation_key(self) -> Optional[int]:
+        """
+        Get rotation key for plate signature.
+
+        Plates don't have explicit rotation property.
+
+        Returns:
+            None (plates have no rotation property)
+        """
+        return None
+
     def set_property(self, name: str, value: Any) -> bool:
         """Set plate property."""
         if super().set_property(name, value):

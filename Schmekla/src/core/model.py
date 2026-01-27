@@ -13,6 +13,7 @@ from loguru import logger
 from PySide6.QtCore import QObject, Signal
 
 from src.core.element import StructuralElement, ElementType
+from src.core.numbering import NumberingManager
 
 
 class StructuralModel(QObject):
@@ -56,6 +57,9 @@ class StructuralModel(QObject):
         # Modification tracking
         self._modified: bool = False
 
+        # Numbering manager for automatic part numbers
+        self.numbering = NumberingManager()
+
         logger.info(f"Created new StructuralModel: {self.name}")
 
     @property
@@ -73,16 +77,23 @@ class StructuralModel(QObject):
         """
         Add element to model.
 
+        Uses Tekla-style identical parts detection: elements with matching
+        signatures (profile, material, geometry) receive the same part number.
+
         Args:
             element: Element to add
 
         Returns:
             Element UUID
         """
+        # Auto-assign part number using identical parts detection
+        if not element.part_number:
+            element.part_number = self.numbering.get_number_for_element(element)
+
         self._elements[element.id] = element
         self._modified = True
 
-        logger.debug(f"Added element: {element}")
+        logger.debug(f"Added element: {element} [{element.part_number}]")
 
         self.element_added.emit(element)
         self.model_changed.emit()
@@ -348,6 +359,7 @@ class StructuralModel(QObject):
         self._grids.clear()
         self._levels.clear()
         self._modified = True
+        self.numbering.reset()  # Reset part numbering
 
         self.model_changed.emit()
         self.selection_changed.emit([])
@@ -406,13 +418,12 @@ class AddElementCommand(Command):
         self.element_id = element.id
 
     def execute(self, model: StructuralModel):
-        model._elements[self.element_id] = self.element
-        model.element_added.emit(self.element)
+        # Use public add_element() which handles numbering, signals, and modified flag
+        model.add_element(self.element)
 
     def undo(self, model: StructuralModel):
-        if self.element_id in model._elements:
-            del model._elements[self.element_id]
-            model.element_removed.emit(self.element)
+        # Use public remove_element() for proper cleanup
+        model.remove_element(self.element_id)
 
 
 class RemoveElementCommand(Command):
@@ -421,12 +432,15 @@ class RemoveElementCommand(Command):
     def __init__(self, element: StructuralElement):
         self.element = element
         self.element_id = element.id
+        # Store the part number so we can restore it on undo
+        self._saved_part_number = element.part_number
 
     def execute(self, model: StructuralModel):
-        if self.element_id in model._elements:
-            del model._elements[self.element_id]
-            model.element_removed.emit(self.element)
+        # Use public remove_element() for proper cleanup
+        model.remove_element(self.element_id)
 
     def undo(self, model: StructuralModel):
-        model._elements[self.element_id] = self.element
-        model.element_added.emit(self.element)
+        # Restore the saved part number before adding back
+        self.element.part_number = self._saved_part_number
+        # Use public add_element() to restore element with proper handling
+        model.add_element(self.element)

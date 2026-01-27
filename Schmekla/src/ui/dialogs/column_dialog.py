@@ -174,9 +174,13 @@ class ColumnDialog(QDialog):
         profile = Profile.from_name(self.profile_combo.currentText())
         material = Material.from_name(self.material_combo.currentText())
 
+        # Column requires start_point and end_point
+        from src.geometry.point import Point3D
+        end = Point3D(base.x, base.y, base.z + height)
+
         self.result_column = Column(
-            base_point=base,
-            height=height,
+            start_point=base,
+            end_point=end,
             profile=profile,
             material=material,
             rotation=self.rotation_spin.value(),

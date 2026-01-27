@@ -7,7 +7,7 @@ Represents a vertical structural member (column, post, pier).
 from typing import Optional, Dict, Any, TYPE_CHECKING
 from loguru import logger
 
-from src.core.element import StructuralElement, ElementType
+from src.core.element import StructuralElement, ElementType, EndPointOffsets, LocalCoordinateSystem
 from src.core.profile import Profile
 from src.core.material import Material
 from src.geometry.point import Point3D
@@ -53,15 +53,51 @@ class Column(StructuralElement):
         self.rotation = rotation
         self._name = name
 
-        # Derived property for legacy support
-        self.height = start_point.distance_to(end_point)
+        # Note: height is now a computed property - no assignment needed
 
-        # Column-specific properties
-        self.base_offset: float = 0.0      # Offset at base (mm)
-        self.top_offset: float = 0.0       # Offset at top (mm)
+        # Column-specific properties - local coordinate offsets
+        self._start_offsets = EndPointOffsets()  # Offset at start/base in local coordinates
+        self._end_offsets = EndPointOffsets()    # Offset at end/top in local coordinates
         self.splice_location: Optional[float] = None  # Height of splice if any
 
-        logger.debug(f"Created Column from {start_point} to {end_point} (h={self.height}mm)")
+        logger.debug(f"Created Column from {start_point} to {end_point} (h={self.height:.1f}mm)")
+
+    @property
+    def height(self) -> float:
+        """Column height calculated dynamically from start and end points."""
+        return self.start_point.distance_to(self.end_point)
+
+    @height.setter
+    def height(self, value: float):
+        """
+        Set height by adjusting end_point along column direction.
+
+        Args:
+            value: New height in mm (must be positive)
+
+        Raises:
+            ValueError: If height is not positive
+        """
+        if value <= 0:
+            raise ValueError("Height must be positive")
+
+        # Calculate direction from start to end
+        current_direction = self.end_point - self.start_point
+        length = current_direction.length()
+
+        if length > 0:
+            # Normalize and scale to new height
+            direction = current_direction.normalize()
+            self.end_point = self.start_point + direction * value
+        else:
+            # Degenerate case: default to vertical column
+            self.end_point = Point3D(
+                self.start_point.x,
+                self.start_point.y,
+                self.start_point.z + value
+            )
+
+        self.invalidate()
 
     @property
     def element_type(self) -> ElementType:
@@ -82,11 +118,6 @@ class Column(StructuralElement):
         return self.end_point
 
     @property
-    def actual_height(self) -> float:
-        """Actual height accounting for offsets."""
-        return self.height - self.base_offset - self.top_offset
-
-    @property
     def midpoint(self) -> Point3D:
         """Column midpoint."""
         return self.start_point.midpoint_to(self.end_point)
@@ -95,6 +126,139 @@ class Column(StructuralElement):
     def direction(self) -> Vector3D:
         """Column direction."""
         return (self.end_point - self.start_point).normalize()
+
+    @property
+    def start_offsets(self) -> EndPointOffsets:
+        """Offset values at start/base point in local coordinates."""
+        return self._start_offsets
+
+    @start_offsets.setter
+    def start_offsets(self, value: EndPointOffsets):
+        self._start_offsets = value
+        self.invalidate()
+
+    @property
+    def end_offsets(self) -> EndPointOffsets:
+        """Offset values at end/top point in local coordinates."""
+        return self._end_offsets
+
+    @end_offsets.setter
+    def end_offsets(self, value: EndPointOffsets):
+        self._end_offsets = value
+        self.invalidate()
+
+    @property
+    def base_offset(self) -> float:
+        """Legacy property: Offset at base (mm) - maps to start_offsets.dx."""
+        return self._start_offsets.dx
+
+    @base_offset.setter
+    def base_offset(self, value: float):
+        self._start_offsets.dx = value
+        self.invalidate()
+
+    @property
+    def top_offset(self) -> float:
+        """Legacy property: Offset at top (mm) - maps to end_offsets.dx."""
+        return self._end_offsets.dx
+
+    @top_offset.setter
+    def top_offset(self, value: float):
+        self._end_offsets.dx = value
+        self.invalidate()
+
+    def get_local_coordinate_system(self, at_start: bool = True) -> LocalCoordinateSystem:
+        """
+        Get the local coordinate system at start or end point.
+
+        The local coordinate system is defined as:
+        - X-axis: Along element (from start to end, typically vertical for columns)
+        - Y-axis: Perpendicular axis (typically along global X)
+        - Z-axis: Right-hand perpendicular (completes right-hand system)
+
+        Args:
+            at_start: If True, origin is at start point; otherwise at end point
+
+        Returns:
+            LocalCoordinateSystem with origin, x_axis, y_axis, z_axis
+        """
+        # X-axis is along the column
+        x_axis = self.direction
+        world_x = Vector3D.unit_x()
+        world_y = Vector3D.unit_y()
+
+        # Calculate local Y axis
+        if abs(x_axis.dot(world_x)) > 0.99:
+            # Column direction is nearly parallel to X, use Y as reference
+            y_axis = world_y.cross(x_axis).cross(x_axis).normalize()
+        else:
+            # Use world X to define local Y
+            y_axis = x_axis.cross(world_x).cross(x_axis).normalize()
+
+        # Z-axis completes the right-hand system
+        z_axis = x_axis.cross(y_axis).normalize()
+
+        # Apply rotation around column axis
+        if self.rotation != 0:
+            y_axis = y_axis.rotate_around_axis(x_axis, self.rotation)
+            z_axis = z_axis.rotate_around_axis(x_axis, self.rotation)
+
+        origin = self.start_point if at_start else self.end_point
+
+        return LocalCoordinateSystem(
+            origin=origin,
+            x_axis=x_axis,
+            y_axis=y_axis,
+            z_axis=z_axis
+        )
+
+    def get_actual_start_point(self) -> Point3D:
+        """
+        Get the actual start/base point after applying local offsets.
+
+        Returns:
+            Point3D representing the actual start position
+        """
+        if self._start_offsets.is_zero():
+            return self.start_point.copy()
+
+        local_cs = self.get_local_coordinate_system(at_start=True)
+        global_offset = local_cs.transform_offsets_to_global(self._start_offsets)
+        return self.start_point + global_offset
+
+    def get_actual_end_point(self) -> Point3D:
+        """
+        Get the actual end/top point after applying local offsets.
+
+        Returns:
+            Point3D representing the actual end position
+        """
+        if self._end_offsets.is_zero():
+            return self.end_point.copy()
+
+        local_cs = self.get_local_coordinate_system(at_start=False)
+        global_offset = local_cs.transform_offsets_to_global(self._end_offsets)
+        return self.end_point + global_offset
+
+    def swap_start_end(self):
+        """
+        Swap the start and end points of the column.
+
+        This also swaps the associated offsets.
+        """
+        # Swap points
+        self.start_point, self.end_point = self.end_point, self.start_point
+
+        # Swap offsets
+        self._start_offsets, self._end_offsets = self._end_offsets, self._start_offsets
+
+        self.invalidate()
+        logger.debug(f"Swapped start/end for column {self._id}")
+
+    @property
+    def actual_height(self) -> float:
+        """Actual height accounting for offsets along the column axis."""
+        return self.height - self._start_offsets.dx - self._end_offsets.dx
 
     def generate_solid(self) -> Any:
         """
@@ -108,20 +272,21 @@ class Column(StructuralElement):
 
             logger.debug(f"Generating solid for column {self._id}")
 
-            # Calculate actual base/top Z
-            actual_base_z = self.base_point.z + self.base_offset
-            actual_height = self.actual_height
+            # Get actual start/end points with offsets applied
+            actual_start = self.get_actual_start_point()
+            actual_end = self.get_actual_end_point()
+            actual_height = actual_start.distance_to(actual_end)
 
             if actual_height <= 0:
                 logger.warning(f"Column {self._id} has non-positive height")
                 return None
 
             # Create profile at base and extrude
-            # Start workplane at base point
-            wp = cq.Workplane("XY").workplane(offset=actual_base_z)
+            # Start workplane at actual start point
+            wp = cq.Workplane("XY").workplane(offset=actual_start.z)
 
-            # Move to base point XY
-            wp = wp.center(self.base_point.x, self.base_point.y)
+            # Move to actual start point XY
+            wp = wp.center(actual_start.x, actual_start.y)
 
             # Create profile based on type
             if self._profile.profile_type.value == "I":
@@ -190,9 +355,40 @@ class Column(StructuralElement):
             "Base Point": str(self.base_point),
             "Top Point": str(self.top_point),
             "Rotation": f"{self.rotation}deg",
-            "Base Offset": f"{self.base_offset} mm",
-            "Top Offset": f"{self.top_offset} mm",
+            "Start Offset DX": f"{self._start_offsets.dx:.1f} mm",
+            "Start Offset DY": f"{self._start_offsets.dy:.1f} mm",
+            "Start Offset DZ": f"{self._start_offsets.dz:.1f} mm",
+            "End Offset DX": f"{self._end_offsets.dx:.1f} mm",
+            "End Offset DY": f"{self._end_offsets.dy:.1f} mm",
+            "End Offset DZ": f"{self._end_offsets.dz:.1f} mm",
         }
+
+    def _calculate_geometry_key(self, tolerance: float = 1.0) -> str:
+        """
+        Calculate geometry key for column based on height.
+
+        Columns with the same height (within tolerance) are considered
+        geometrically identical for Tekla-style numbering.
+
+        Args:
+            tolerance: Rounding tolerance in mm
+
+        Returns:
+            Geometry key string like "H4000"
+        """
+        rounded_height = round(self.height / tolerance) * tolerance
+        return f"H{rounded_height:.0f}"
+
+    def _get_rotation_key(self) -> Optional[int]:
+        """
+        Get rotation key for column signature.
+
+        Columns with different rotations are considered different parts.
+
+        Returns:
+            Rotation in degrees (rounded) or None if rotation is essentially zero
+        """
+        return round(self.rotation)
 
     def set_property(self, name: str, value: Any) -> bool:
         """Set column property."""
@@ -200,19 +396,34 @@ class Column(StructuralElement):
             return True
 
         if name == "Height":
-            self.height = float(value)
-            self.invalidate()
+            self.height = float(value)  # Setter handles invalidate()
             return True
         elif name == "Rotation":
             self.rotation = float(value)
             self.invalidate()
             return True
-        elif name == "Base Offset":
-            self.base_offset = float(value)
+        elif name == "Start Offset DX":
+            self._start_offsets.dx = float(value)
             self.invalidate()
             return True
-        elif name == "Top Offset":
-            self.top_offset = float(value)
+        elif name == "Start Offset DY":
+            self._start_offsets.dy = float(value)
+            self.invalidate()
+            return True
+        elif name == "Start Offset DZ":
+            self._start_offsets.dz = float(value)
+            self.invalidate()
+            return True
+        elif name == "End Offset DX":
+            self._end_offsets.dx = float(value)
+            self.invalidate()
+            return True
+        elif name == "End Offset DY":
+            self._end_offsets.dy = float(value)
+            self.invalidate()
+            return True
+        elif name == "End Offset DZ":
+            self._end_offsets.dz = float(value)
             self.invalidate()
             return True
 
@@ -224,9 +435,14 @@ class Column(StructuralElement):
 
         Args:
             additional_height: Height to add (can be negative)
+
+        Raises:
+            ValueError: If resulting height would be non-positive
         """
-        self.height += additional_height
-        self.invalidate()
+        new_height = self.height + additional_height
+        if new_height <= 0:
+            raise ValueError(f"Resulting height {new_height:.1f}mm must be positive")
+        self.height = new_height  # Uses the setter which updates end_point
 
     def split_at_height(self, split_height: float) -> tuple:
         """
@@ -278,8 +494,8 @@ class Column(StructuralElement):
             self.rotation,
             self._name
         )
-        new_col.base_offset = self.base_offset
-        new_col.top_offset = self.top_offset
+        new_col._start_offsets = self._start_offsets.copy()
+        new_col._end_offsets = self._end_offsets.copy()
         new_col.splice_location = self.splice_location
         return new_col
 

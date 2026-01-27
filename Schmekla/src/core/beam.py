@@ -4,10 +4,10 @@ Beam structural element for Schmekla.
 Represents a linear structural member (beam, girder, etc.).
 """
 
-from typing import Optional, Dict, Any, TYPE_CHECKING
+from typing import Any, Dict, Optional, TYPE_CHECKING
 from loguru import logger
 
-from src.core.element import StructuralElement, ElementType
+from src.core.element import StructuralElement, ElementType, EndPointOffsets, LocalCoordinateSystem
 from src.core.profile import Profile
 from src.core.material import Material
 from src.geometry.point import Point3D
@@ -53,10 +53,10 @@ class Beam(StructuralElement):
         self.rotation = rotation
         self._name = name
 
-        # Beam-specific properties
-        self.start_offset = Vector3D.zero()  # Offset at start
-        self.end_offset = Vector3D.zero()    # Offset at end
-        self.camber = 0.0                    # Camber in mm
+        # Beam-specific properties - local coordinate offsets
+        self._start_offsets = EndPointOffsets()  # Offset at start in local coordinates
+        self._end_offsets = EndPointOffsets()    # Offset at end in local coordinates
+        self.camber = 0.0                        # Camber in mm
 
         # Connection info (for reference)
         self.start_connection: str = ""
@@ -83,6 +83,116 @@ class Beam(StructuralElement):
         """Beam midpoint."""
         return self.start_point.midpoint_to(self.end_point)
 
+    @property
+    def start_offsets(self) -> EndPointOffsets:
+        """Offset values at start point in local coordinates."""
+        return self._start_offsets
+
+    @start_offsets.setter
+    def start_offsets(self, value: EndPointOffsets):
+        self._start_offsets = value
+        self.invalidate()
+
+    @property
+    def end_offsets(self) -> EndPointOffsets:
+        """Offset values at end point in local coordinates."""
+        return self._end_offsets
+
+    @end_offsets.setter
+    def end_offsets(self, value: EndPointOffsets):
+        self._end_offsets = value
+        self.invalidate()
+
+    def get_local_coordinate_system(self, at_start: bool = True) -> LocalCoordinateSystem:
+        """
+        Get the local coordinate system at start or end point.
+
+        The local coordinate system is defined as:
+        - X-axis: Along element (from start to end)
+        - Y-axis: Up direction (typically perpendicular to beam in vertical plane)
+        - Z-axis: Right-hand perpendicular (completes right-hand system)
+
+        Args:
+            at_start: If True, origin is at start point; otherwise at end point
+
+        Returns:
+            LocalCoordinateSystem with origin, x_axis, y_axis, z_axis
+        """
+        # X-axis is along the beam
+        x_axis = self.direction
+        world_z = Vector3D.unit_z()
+
+        # Calculate local Y axis (typically "up" relative to beam)
+        if abs(x_axis.dot(world_z)) > 0.99:
+            # Beam is nearly vertical, use X as reference
+            y_axis = Vector3D.unit_x().cross(x_axis).normalize()
+        else:
+            # Use world Z to define "up"
+            y_axis = x_axis.cross(world_z).cross(x_axis).normalize()
+
+        # Z-axis completes the right-hand system
+        z_axis = x_axis.cross(y_axis).normalize()
+
+        # Apply rotation around beam axis
+        if self.rotation != 0:
+            y_axis = y_axis.rotate_around_axis(x_axis, self.rotation)
+            z_axis = z_axis.rotate_around_axis(x_axis, self.rotation)
+
+        origin = self.start_point if at_start else self.end_point
+
+        return LocalCoordinateSystem(
+            origin=origin,
+            x_axis=x_axis,
+            y_axis=y_axis,
+            z_axis=z_axis
+        )
+
+    def get_actual_start_point(self) -> Point3D:
+        """
+        Get the actual start point after applying local offsets.
+
+        Returns:
+            Point3D representing the actual start position
+        """
+        if self._start_offsets.is_zero():
+            return self.start_point.copy()
+
+        local_cs = self.get_local_coordinate_system(at_start=True)
+        global_offset = local_cs.transform_offsets_to_global(self._start_offsets)
+        return self.start_point + global_offset
+
+    def get_actual_end_point(self) -> Point3D:
+        """
+        Get the actual end point after applying local offsets.
+
+        Returns:
+            Point3D representing the actual end position
+        """
+        if self._end_offsets.is_zero():
+            return self.end_point.copy()
+
+        local_cs = self.get_local_coordinate_system(at_start=False)
+        global_offset = local_cs.transform_offsets_to_global(self._end_offsets)
+        return self.end_point + global_offset
+
+    def swap_start_end(self):
+        """
+        Swap the start and end points of the beam.
+
+        This also swaps the associated offsets and connection info.
+        """
+        # Swap points
+        self.start_point, self.end_point = self.end_point, self.start_point
+
+        # Swap offsets
+        self._start_offsets, self._end_offsets = self._end_offsets, self._start_offsets
+
+        # Swap connection info
+        self.start_connection, self.end_connection = self.end_connection, self.start_connection
+
+        self.invalidate()
+        logger.debug(f"Swapped start/end for beam {self._id}")
+
     def generate_solid(self) -> Any:
         """
         Generate beam solid by sweeping profile along axis.
@@ -97,8 +207,8 @@ class Beam(StructuralElement):
             logger.debug(f"Generating solid for beam {self._id}")
 
             # Get actual start/end with offsets
-            actual_start = self.start_point + self.start_offset
-            actual_end = self.end_point + self.end_offset
+            actual_start = self.get_actual_start_point()
+            actual_end = self.get_actual_end_point()
 
             # Create profile at start point
             profile_wire = self._create_profile_wire()
@@ -185,7 +295,40 @@ class Beam(StructuralElement):
             "End Point": str(self.end_point),
             "Rotation": f"{self.rotation}°",
             "Camber": f"{self.camber} mm",
+            "Start Offset DX": f"{self._start_offsets.dx:.1f} mm",
+            "Start Offset DY": f"{self._start_offsets.dy:.1f} mm",
+            "Start Offset DZ": f"{self._start_offsets.dz:.1f} mm",
+            "End Offset DX": f"{self._end_offsets.dx:.1f} mm",
+            "End Offset DY": f"{self._end_offsets.dy:.1f} mm",
+            "End Offset DZ": f"{self._end_offsets.dz:.1f} mm",
         }
+
+    def _calculate_geometry_key(self, tolerance: float = 1.0) -> str:
+        """
+        Calculate geometry key for beam based on length.
+
+        Beams with the same length (within tolerance) are considered
+        geometrically identical for Tekla-style numbering.
+
+        Args:
+            tolerance: Rounding tolerance in mm
+
+        Returns:
+            Geometry key string like "L6000"
+        """
+        rounded_length = round(self.length / tolerance) * tolerance
+        return f"L{rounded_length:.0f}"
+
+    def _get_rotation_key(self) -> Optional[int]:
+        """
+        Get rotation key for beam signature.
+
+        Beams with different rotations are considered different parts.
+
+        Returns:
+            Rotation in degrees (rounded) or None if rotation is essentially zero
+        """
+        return round(self.rotation)
 
     def set_property(self, name: str, value: Any) -> bool:
         """Set beam property."""
@@ -198,6 +341,30 @@ class Beam(StructuralElement):
             return True
         elif name == "Camber":
             self.camber = float(value)
+            self.invalidate()
+            return True
+        elif name == "Start Offset DX":
+            self._start_offsets.dx = float(value)
+            self.invalidate()
+            return True
+        elif name == "Start Offset DY":
+            self._start_offsets.dy = float(value)
+            self.invalidate()
+            return True
+        elif name == "Start Offset DZ":
+            self._start_offsets.dz = float(value)
+            self.invalidate()
+            return True
+        elif name == "End Offset DX":
+            self._end_offsets.dx = float(value)
+            self.invalidate()
+            return True
+        elif name == "End Offset DY":
+            self._end_offsets.dy = float(value)
+            self.invalidate()
+            return True
+        elif name == "End Offset DZ":
+            self._end_offsets.dz = float(value)
             self.invalidate()
             return True
 
@@ -277,9 +444,11 @@ class Beam(StructuralElement):
             self.rotation,
             self._name
         )
-        new_beam.start_offset = self.start_offset.copy()
-        new_beam.end_offset = self.end_offset.copy()
+        new_beam._start_offsets = self._start_offsets.copy()
+        new_beam._end_offsets = self._end_offsets.copy()
         new_beam.camber = self.camber
+        new_beam.start_connection = self.start_connection
+        new_beam.end_connection = self.end_connection
         return new_beam
 
     def __repr__(self) -> str:

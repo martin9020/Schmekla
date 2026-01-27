@@ -8,7 +8,7 @@ cd /d "%~dp0"
 echo [Schmekla] Checking environment...
 
 REM Define paths
-set "SHARED_VENV=G:\My Drive\Everything-Claude\Schmekla\venv"
+set "SHARED_VENV=c:\Users\Daradudai\Everything-Claude\Schmekla\venv"
 set "LOCAL_VENV=venv"
 
 REM 1. Check Shared Venv (User Preference)

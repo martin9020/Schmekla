@@ -516,13 +516,27 @@ Analyze the request and any provided files. If the user wants to create a struct
 
                 # Column at grid B (left side)
                 col_b_base = Point3D(ox, y_pos, oz)
-                col_b = Column(col_b_base, eaves_height, col_profile, material, name=f"Col-B{i+1}")
+                col_b_top = Point3D(ox, y_pos, oz + eaves_height)
+                col_b = Column(
+                    start_point=col_b_base,
+                    end_point=col_b_top,
+                    profile=col_profile,
+                    material=material,
+                    name=f"Col-B{i+1}"
+                )
                 self.model.add_element(col_b)
                 created_ids.append(str(col_b.id))
 
                 # Column at grid C (right side)
                 col_c_base = Point3D(ox + width, y_pos, oz)
-                col_c = Column(col_c_base, eaves_height, col_profile, material, name=f"Col-C{i+1}")
+                col_c_top = Point3D(ox + width, y_pos, oz + eaves_height)
+                col_c = Column(
+                    start_point=col_c_base,
+                    end_point=col_c_top,
+                    profile=col_profile,
+                    material=material,
+                    name=f"Col-C{i+1}"
+                )
                 self.model.add_element(col_c)
                 created_ids.append(str(col_c.id))
 
@@ -602,7 +616,16 @@ Analyze the request and any provided files. If the user wants to create a struct
             rotation = float(params.get("rotation", 0))
             name = params.get("name", "")
 
-            column = Column(base, height, profile, material, rotation, name)
+            # Column requires start_point and end_point, not base and height
+            end = Point3D(base.x, base.y, base.z + height)
+            column = Column(
+                start_point=base,
+                end_point=end,
+                profile=profile,
+                material=material,
+                rotation=rotation,
+                name=name
+            )
             self.model.add_element(column)
 
             return {"success": True, "element_id": str(column.id)}
@@ -739,13 +762,25 @@ Analyze the request and any provided files. If the user wants to create a struct
             # Create columns using Column class
             col1_base = Point3D(ox, oy, oz)
             col2_base = Point3D(ox + width, oy, oz)
-
-            col1 = Column(col1_base, height, col_profile, material, name="Col-1")
-            col2 = Column(col2_base, height, col_profile, material, name="Col-2")
-
-            # Create rafter beam at top
             col1_top = Point3D(ox, oy, oz + height)
             col2_top = Point3D(ox + width, oy, oz + height)
+
+            col1 = Column(
+                start_point=col1_base,
+                end_point=col1_top,
+                profile=col_profile,
+                material=material,
+                name="Col-1"
+            )
+            col2 = Column(
+                start_point=col2_base,
+                end_point=col2_top,
+                profile=col_profile,
+                material=material,
+                name="Col-2"
+            )
+
+            # Create rafter beam at top
             rafter = Beam(col1_top, col2_top, beam_profile, material, name="Rafter")
 
             self.model.add_element(col1)

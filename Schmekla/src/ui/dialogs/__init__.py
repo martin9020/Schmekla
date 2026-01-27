@@ -11,6 +11,8 @@ from src.ui.dialogs.plate_dialog import PlateDialog
 from src.ui.dialogs.grid_dialog import GridDialog
 from src.ui.dialogs.export_dialog import ExportDialog
 from src.ui.dialogs.plan_import_dialog import PlanImportDialog
+from src.ui.dialogs.numbering_dialog import NumberingDialog
+from src.ui.dialogs.batch_edit_dialog import BatchEditDialog
 
 __all__ = [
     "BeamDialog",
@@ -19,4 +21,6 @@ __all__ = [
     "GridDialog",
     "ExportDialog",
     "PlanImportDialog",
+    "NumberingDialog",
+    "BatchEditDialog",
 ]

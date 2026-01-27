@@ -21,6 +21,16 @@ from PySide6.QtGui import QAction, QKeySequence, QIcon, QShortcut
 from src.core.model import StructuralModel
 from src.utils.config import Config
 
+# Pre-import frequently used modules to avoid lazy import delays
+# These imports are used during interactive element creation (B, C, P keys)
+from src.ui.interaction import InteractionManager, InteractionMode
+from src.core.beam import Beam
+from src.core.column import Column
+from src.core.plate import Plate
+from src.core.profile import Profile, ProfileCatalog
+from src.core.material import Material, MaterialCatalog
+from src.geometry.point import Point3D
+
 
 class MainWindow(QMainWindow):
     """
@@ -34,15 +44,24 @@ class MainWindow(QMainWindow):
         super().__init__(parent)
 
         # Initialize model
-        # Initialize model
         self.model = StructuralModel()
         self.config = Config.load()
-        
-        # Initialize Interaction Manager
-        from src.ui.interaction import InteractionManager
-        self.interaction_manager = InteractionManager()
+
+        # Pre-load catalogs at startup to avoid delay on first element creation
+        # This happens once during app init instead of on first B/C/P key press
+        ProfileCatalog.get_instance().load_catalog()
+        MaterialCatalog.get_instance().load_catalog()
+
+        # Initialize Snap Manager
+        from src.core.snap_manager import SnapManager
+        self.snap_manager = SnapManager(self.model)
+
+        # Initialize Interaction Manager with snap manager (already imported at module level)
+        self.interaction_manager = InteractionManager(snap_manager=self.snap_manager)
         self.interaction_manager.prompt_changed.connect(self._on_prompt_changed)
         self.interaction_manager.element_created.connect(self._on_element_created_request)
+        self.interaction_manager.copy_requested.connect(self._on_copy_requested)
+        self.interaction_manager.move_requested.connect(self._on_move_requested)
 
         # Set window properties
         self.setWindowTitle("Schmekla - Structural Modeler")
@@ -123,6 +142,13 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self._create_action(
             "Delete", self.delete_selected, QKeySequence.Delete
         ))
+        edit_menu.addSeparator()
+        edit_menu.addAction(self._create_action(
+            "Copy", self.copy_selected, "Ctrl+Shift+C"
+        ))
+        edit_menu.addAction(self._create_action(
+            "Move", self.move_selected, "Ctrl+Shift+M"
+        ))
 
         # View menu
         view_menu = menubar.addMenu("&View")
@@ -157,6 +183,22 @@ class MainWindow(QMainWindow):
         modeling_menu.addSeparator()
         modeling_menu.addAction(self._create_action(
             "Create Grid...", self.create_grid, "G"
+        ))
+
+        # Tools menu
+        tools_menu = menubar.addMenu("&Tools")
+        tools_menu.addAction(self._create_action(
+            "Numbering Settings...", self.open_numbering_settings, "Ctrl+N"
+        ))
+        tools_menu.addSeparator()
+        tools_menu.addAction(self._create_action(
+            "Toggle All Snaps", self.toggle_all_snaps, "F3"
+        ))
+        tools_menu.addAction(self._create_action(
+            "Toggle Grid Snap", self.toggle_grid_snap, "F4"
+        ))
+        tools_menu.addAction(self._create_action(
+            "Toggle Endpoint Snap", self.toggle_endpoint_snap, "F5"
         ))
 
         # Claude menu
@@ -272,6 +314,32 @@ class MainWindow(QMainWindow):
         self.model.element_removed.connect(self._on_element_removed)
         self.model.model_changed.connect(self._update_ui)
         self.model.selection_changed.connect(self._on_selection_changed)
+
+        # Invalidate snap cache when model changes (elements added/removed)
+        self.model.model_changed.connect(lambda: self._invalidate_snap_cache("model changed"))
+
+        # Connect viewport snap feedback to status bar
+        if self.viewport:
+            try:
+                self.viewport.snap_feedback.connect(self._on_snap_feedback)
+                logger.debug("Connected viewport snap feedback signal")
+            except AttributeError as e:
+                logger.warning(f"Viewport snap feedback signal not available: {e}")
+
+    def _on_snap_feedback(self, message: str):
+        """Update coordinate label in status bar with snap feedback."""
+        self.coord_label.setText(message)
+
+    def _invalidate_snap_cache(self, reason: str = ""):
+        """Invalidate snap manager cache when model structure changes.
+
+        Args:
+            reason: Optional description of why cache was invalidated
+        """
+        if self.snap_manager:
+            self.snap_manager.invalidate_cache()
+            reason_str = f" ({reason})" if reason else ""
+            logger.info(f"Snap manager cache invalidated{reason_str}")
 
     def _load_style(self):
         """Load application stylesheet."""
@@ -405,7 +473,7 @@ class MainWindow(QMainWindow):
             if element:
                 if element.set_property(prop_name, new_value):
                     logger.info(f"Property {prop_name} changed to {new_value}")
-                    self.model._emit_element_modified(element)
+                    self.model.element_modified.emit(element)
                     if self.viewport:
                         self.viewport.update_display()
         except Exception as e:
@@ -427,11 +495,25 @@ class MainWindow(QMainWindow):
         """Update element count in status bar."""
         self.element_count_label.setText(f"Elements: {self.model.element_count}")
 
+    def get_model_elements_safe(self):
+        """Safely get all model elements for external operations.
+
+        Returns:
+            list: List of all elements in the model, or empty list on error.
+        """
+        try:
+            if self.model is None:
+                return []
+            return list(self.model.get_all_elements())
+        except Exception as e:
+            logger.error(f"Failed to get model elements: {e}")
+            return []
+
     def _on_model_file_changed(self):
         """Handle notification that Claude may have modified model files."""
         # Refresh UI in case the model was modified
         if hasattr(self, 'viewport') and self.viewport:
-            self.viewport.update_view()
+            self.viewport.update_display()
         self._rebuild_tree()
         self._update_element_count()
         self.status_label.setText("Model may have been updated by Claude")
@@ -547,24 +629,37 @@ class MainWindow(QMainWindow):
 
     def create_beam(self):
         """Enter beam creation mode."""
-        from src.ui.interaction import InteractionMode
+        # InteractionMode is now imported at module level for instant access
         if self.interaction_manager:
             self.interaction_manager.set_mode(InteractionMode.CREATE_BEAM)
-            self.viewport.start_beam_creation() # Legacy call to enable picking if needed, but manager handles it now
-            # Actually, we should rely on the manager + viewport connection.
-            # But we need to ensure picking is enabled. Viewport does this in init now.
 
     def create_column(self):
         """Enter column creation mode."""
-        from src.ui.interaction import InteractionMode
+        # InteractionMode is now imported at module level for instant access
         if self.interaction_manager:
             self.interaction_manager.set_mode(InteractionMode.CREATE_COLUMN)
 
     def create_plate(self):
         """Enter plate creation mode."""
-        from src.ui.interaction import InteractionMode
+        # InteractionMode is now imported at module level for instant access
         if self.interaction_manager:
             self.interaction_manager.set_mode(InteractionMode.CREATE_PLATE)
+
+    def copy_selected(self):
+        """Enter copy mode for selected elements."""
+        if not self.model.get_selected_ids():
+            self.status_label.setText("Select elements first")
+            return
+        if self.interaction_manager:
+            self.interaction_manager.set_mode(InteractionMode.COPY)
+
+    def move_selected(self):
+        """Enter move mode for selected elements."""
+        if not self.model.get_selected_ids():
+            self.status_label.setText("Select elements first")
+            return
+        if self.interaction_manager:
+            self.interaction_manager.set_mode(InteractionMode.MOVE)
 
     def create_grid(self):
         """Open grid creation dialog."""
@@ -576,9 +671,18 @@ class MainWindow(QMainWindow):
             if grids:
                 # Store grids in model (implementation depends on grid handling)
                 self.model._grids = grids
+
+                # Invalidate snap manager cache so new grid intersections are used
+                self._invalidate_snap_cache("grid points updated")
+
+                # Calculate total grid intersection points for status message
+                x_count = len(grids.get('x_grids', []))
+                y_count = len(grids.get('y_grids', []))
+                snap_points = x_count * y_count
+
                 self.status_label.setText(
-                    f"Created {len(grids.get('x_grids', []))} X grids and "
-                    f"{len(grids.get('y_grids', []))} Y grids"
+                    f"Created {x_count} X grids and {y_count} Y grids "
+                    f"({snap_points} snap points)"
                 )
                 if self.viewport:
                     self.viewport.update_display()
@@ -598,11 +702,47 @@ class MainWindow(QMainWindow):
     def open_claude_prompt(self):
         """Focus Claude input."""
         self.claude_dock.show()
-        self.claude_input.setFocus()
+        self.claude_terminal.setFocus()
 
     def toggle_claude_terminal(self):
         """Toggle Claude terminal visibility."""
         self.claude_dock.setVisible(not self.claude_dock.isVisible())
+
+    def open_numbering_settings(self):
+        """Open numbering settings dialog."""
+        from src.ui.dialogs.numbering_dialog import NumberingDialog
+        from src.core.numbering import NumberingManager
+
+        # Get or create numbering manager
+        if not hasattr(self, 'numbering_manager'):
+            self.numbering_manager = NumberingManager()
+
+        dialog = NumberingDialog(self.numbering_manager, self)
+        dialog.exec()
+
+    def toggle_all_snaps(self):
+        """Toggle all snapping on/off (F3)."""
+        if self.interaction_manager:
+            enabled = self.interaction_manager.toggle_all_snaps()
+            state = "ON" if enabled else "OFF"
+            self.status_label.setText(f"All Snapping: {state}")
+            logger.info(f"All snapping toggled: {state}")
+
+    def toggle_grid_snap(self):
+        """Toggle grid snap only (F4)."""
+        if self.interaction_manager:
+            enabled = self.interaction_manager.toggle_grid_snap()
+            state = "ON" if enabled else "OFF"
+            self.status_label.setText(f"Grid Snap: {state}")
+            logger.info(f"Grid snap toggled: {state}")
+
+    def toggle_endpoint_snap(self):
+        """Toggle endpoint snap only (F5)."""
+        if self.interaction_manager:
+            enabled = self.interaction_manager.toggle_endpoint_snap()
+            state = "ON" if enabled else "OFF"
+            self.status_label.setText(f"Endpoint Snap: {state}")
+            logger.info(f"Endpoint snap toggled: {state}")
 
     def show_about(self):
         """Show about dialog."""
@@ -627,13 +767,11 @@ class MainWindow(QMainWindow):
 
     def _on_element_created_request(self, element_type: str, params: dict):
         """Handle element creation request from InteractionManager."""
+        # All element classes (Beam, Column, Plate, Profile, Material, Point3D)
+        # are now imported at module level for instant element creation
         try:
             new_element = None
             if element_type == "BEAM":
-                from src.core.beam import Beam
-                from src.core.profile import Profile
-                from src.core.material import Material
-                
                 new_element = Beam(
                     start_point=params["start"],
                     end_point=params["end"],
@@ -642,15 +780,10 @@ class MainWindow(QMainWindow):
                     name="BEAM"
                 )
             elif element_type == "COLUMN":
-                from src.core.column import Column
-                from src.core.profile import Profile
-                from src.core.material import Material
-                from src.geometry.point import Point3D
-                
                 base = params["base"]
                 height = params["height"]
                 end = Point3D(base.x, base.y, base.z + height)
-                
+
                 new_element = Column(
                     start_point=base,
                     end_point=end,
@@ -659,9 +792,6 @@ class MainWindow(QMainWindow):
                     name="COLUMN"
                 )
             elif element_type == "PLATE":
-                from src.core.plate import Plate
-                from src.core.material import Material
-                
                 new_element = Plate(
                     points=params["points"],
                     thickness=params.get("thickness", 10.0),
@@ -678,6 +808,30 @@ class MainWindow(QMainWindow):
         except Exception as e:
             logger.error(f"Failed to create element interactively: {e}")
             self.status_label.setText(f"Error: {e}")
+
+    def _on_copy_requested(self, displacement):
+        """Handle copy request from interaction manager."""
+        from src.geometry.vector import Vector3D
+        selected = self.model.get_selected_elements()
+        new_elements = []
+        for elem in selected:
+            new_elem = elem.copy()
+            new_elem.move(displacement)
+            self.model.add_element(new_elem)
+            new_elements.append(new_elem)
+        self.status_label.setText(f"Copied {len(new_elements)} elements")
+        if self.viewport:
+            self.viewport.update_display()
+
+    def _on_move_requested(self, displacement):
+        """Handle move request from interaction manager."""
+        selected = self.model.get_selected_elements()
+        for elem in selected:
+            elem.move(displacement)
+        self.model.model_changed.emit()
+        self.status_label.setText(f"Moved {len(selected)} elements")
+        if self.viewport:
+            self.viewport.update_display()
 
     def closeEvent(self, event):
         """Handle window close."""

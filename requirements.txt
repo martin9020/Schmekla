@@ -6,7 +6,7 @@ attrs==25.4.0
 black==26.1.0
 cadquery==2.6.1
 cadquery-ocp==7.8.1.1.post1
-cadquery_vtk==9.2.6
+cadquery_vtk>=9.2.6
 casadi==3.7.2
 certifi==2026.1.4
 charset-normalizer==3.4.4

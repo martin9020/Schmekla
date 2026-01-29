@@ -514,12 +514,9 @@ class Viewport3D(QWidget):
         """
         Switch interactor style based on mode.
         - IDLE: Standard trackball camera for navigation, click picks elements
-        - CREATE_*: Enable ground plane picking for point placement
+        - CREATE_*: Enable ground plane picking for point placement (except CREATE_WELD)
         - COPY: Enable ground plane picking for copy base/destination points
         - MOVE: Enable ground plane picking for move base/destination points
-
-        OPTIMIZATION: Avoid unnecessary picker re-initialization if mode hasn't changed.
-        PyVista picker setup is expensive, so we cache the current picking state.
         """
         if self.plotter is None:
             return
@@ -534,9 +531,10 @@ class Viewport3D(QWidget):
         self._current_mode = mode_name
         logger.info(f"Viewport mode changed to: {mode_name}")
 
-        if mode_name == "IDLE":
+        # IDLE and CREATE_WELD allow selection
+        if mode_name == "IDLE" or mode_name == "CREATE_WELD":
             # Only disable and re-enable if coming from a picking mode
-            if previous_mode and previous_mode != "IDLE":
+            if previous_mode and previous_mode != "IDLE" and previous_mode != "CREATE_WELD":
                 try:
                     self.plotter.disable_picking()
                 except Exception:
@@ -547,13 +545,13 @@ class Viewport3D(QWidget):
                 self.hide_snap_indicator()
         else:
             # Check if this is a mode that needs ground plane picking
-            is_creation_mode = mode_name.startswith("CREATE_")
+            is_creation_mode = mode_name.startswith("CREATE_") and mode_name != "CREATE_WELD"
             is_copy_mode = mode_name == "COPY"
             is_move_mode = mode_name == "MOVE"
             needs_ground_picking = is_creation_mode or is_copy_mode or is_move_mode
 
             # Check if previous mode also used ground plane picking
-            was_creation_mode = previous_mode and previous_mode.startswith("CREATE_") if previous_mode else False
+            was_creation_mode = previous_mode and previous_mode.startswith("CREATE_") and previous_mode != "CREATE_WELD" if previous_mode else False
             was_copy_mode = previous_mode == "COPY" if previous_mode else False
             was_move_mode = previous_mode == "MOVE" if previous_mode else False
             had_ground_picking = was_creation_mode or was_copy_mode or was_move_mode
@@ -966,6 +964,34 @@ class Viewport3D(QWidget):
                         c.z - element.depth, c.z
                     ])
                     actor = self.plotter.add_mesh(box, color=color, name=str(element.id))
+                    self._actors[element.id] = actor
+            
+            elif elem_type == 'bolt_group':
+                # Draw bolts as cylinders
+                if hasattr(element, 'get_bolt_positions'):
+                    positions = element.get_bolt_positions()
+                    if positions:
+                        meshes = []
+                        dia = getattr(element, 'bolt_diameter', 20.0)
+                        # Default Z direction for now
+                        for pos in positions:
+                            cyl = pv.Cylinder(center=(pos.x, pos.y, pos.z), direction=(0,0,1), radius=dia/2, height=100)
+                            meshes.append(cyl)
+                        
+                        if meshes:
+                            # Merge meshes
+                            merged = meshes[0]
+                            for m in meshes[1:]:
+                                merged = merged.merge(m)
+                            actor = self.plotter.add_mesh(merged, color='#888888', name=str(element.id))
+                            self._actors[element.id] = actor
+                            
+            elif elem_type == 'weld':
+                # Draw weld as small sphere
+                pos = getattr(element, 'position', None)
+                if pos:
+                    sphere = pv.Sphere(radius=15, center=(pos.x, pos.y, pos.z))
+                    actor = self.plotter.add_mesh(sphere, color='#ff00ff', name=str(element.id))
                     self._actors[element.id] = actor
 
         except Exception as e:

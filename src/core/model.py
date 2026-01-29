@@ -5,6 +5,7 @@ The main container for all structural elements in a project.
 """
 
 from typing import Dict, List, Optional, Any
+from abc import ABC, abstractmethod
 from uuid import UUID
 from pathlib import Path
 import json
@@ -14,6 +15,9 @@ from PySide6.QtCore import QObject, Signal
 
 from src.core.element import StructuralElement, ElementType
 from src.core.numbering import NumberingManager
+from src.core.grid import GridSystem
+from src.core.level import Level
+from src.core.drawing_manager import DrawingManager
 
 
 class StructuralModel(QObject):
@@ -43,8 +47,8 @@ class StructuralModel(QObject):
         self._elements: Dict[UUID, StructuralElement] = {}
 
         # Grids and levels
-        self._grids: List[Any] = []  # Grid objects
-        self._levels: List[Any] = []  # Level objects
+        self._grids: List[GridSystem] = []
+        self._levels: List[Level] = []
 
         # Selection
         self._selected_ids: List[UUID] = []
@@ -59,6 +63,9 @@ class StructuralModel(QObject):
 
         # Numbering manager for automatic part numbers
         self.numbering = NumberingManager()
+        
+        # Drawing manager
+        self.drawing_manager = DrawingManager(self)
 
         logger.info(f"Created new StructuralModel: {self.name}")
 
@@ -87,13 +94,23 @@ class StructuralModel(QObject):
             Element UUID
         """
         # Auto-assign part number using identical parts detection
-        if not element.part_number:
-            element.part_number = self.numbering.get_number_for_element(element)
+        # Skip numbering for system elements (Grids, Levels, Welds, Bolts)
+        if element.element_type not in [ElementType.GRID, ElementType.LEVEL, ElementType.WELD, ElementType.BOLT_GROUP]:
+            if not hasattr(element, 'part_number') or not element.part_number:
+                if hasattr(self.numbering, 'get_number_for_element'):
+                    element.part_number = self.numbering.get_number_for_element(element)
 
         self._elements[element.id] = element
         self._modified = True
 
-        logger.debug(f"Added element: {element} [{element.part_number}]")
+        hook = getattr(element, "on_added", None)
+        if callable(hook):
+            try:
+                hook(self)
+            except Exception as e:
+                logger.warning(f"on_added hook failed for {element}: {e}")
+
+        logger.debug(f"Added element: {element}")
 
         self.element_added.emit(element)
         self.model_changed.emit()
@@ -143,6 +160,63 @@ class StructuralModel(QObject):
     def get_element_ids(self) -> List[UUID]:
         """Get all element IDs."""
         return list(self._elements.keys())
+
+    def get_bounding_box(self):
+        """
+        Get the combined bounding box of all elements in the model.
+
+        Returns:
+            Tuple of (min_point, max_point) as Point3D
+        """
+        from src.geometry.point import Point3D
+
+        if not self._elements:
+            return (Point3D.origin(), Point3D(10000, 10000, 10000))
+
+        min_x = min_y = min_z = float('inf')
+        max_x = max_y = max_z = float('-inf')
+        has_valid = False
+
+        for element in self._elements.values():
+            try:
+                el_min, el_max = element.get_bounding_box()
+                if el_min.x == 0 and el_min.y == 0 and el_min.z == 0 and \
+                   el_max.x == 0 and el_max.y == 0 and el_max.z == 0:
+                    # Skip elements that returned origin (no valid bbox)
+                    # Fall back to element positions if available
+                    if hasattr(element, 'start_point') and hasattr(element, 'end_point'):
+                        for pt in [element.start_point, element.end_point]:
+                            min_x = min(min_x, pt.x)
+                            min_y = min(min_y, pt.y)
+                            min_z = min(min_z, pt.z)
+                            max_x = max(max_x, pt.x)
+                            max_y = max(max_y, pt.y)
+                            max_z = max(max_z, pt.z)
+                            has_valid = True
+                    elif hasattr(element, 'base_point'):
+                        pt = element.base_point
+                        min_x = min(min_x, pt.x)
+                        min_y = min(min_y, pt.y)
+                        min_z = min(min_z, pt.z)
+                        max_x = max(max_x, pt.x)
+                        max_y = max(max_y, pt.y)
+                        max_z = max(max_z, pt.z)
+                        has_valid = True
+                    continue
+                min_x = min(min_x, el_min.x)
+                min_y = min(min_y, el_min.y)
+                min_z = min(min_z, el_min.z)
+                max_x = max(max_x, el_max.x)
+                max_y = max(max_y, el_max.y)
+                max_z = max(max_z, el_max.z)
+                has_valid = True
+            except Exception:
+                continue
+
+        if not has_valid:
+            return (Point3D.origin(), Point3D(10000, 10000, 10000))
+
+        return (Point3D(min_x, min_y, min_z), Point3D(max_x, max_y, max_z))
 
     # Selection management
     def select_element(self, element_id: UUID, add_to_selection: bool = False):
@@ -249,198 +323,99 @@ class StructuralModel(QObject):
         """Check if redo is available."""
         return len(self._redo_stack) > 0
 
-    # Serialization
-    def save(self, file_path: Path = None) -> bool:
-        """
-        Save model to file.
+    # Grid and Level management
+    def add_grid(self, grid: GridSystem) -> UUID:
+        """Add a grid system to the model."""
+        self._grids.append(grid)
+        # Also add to elements map for generic handling
+        self.add_element(grid)
+        return grid.id
 
-        Args:
-            file_path: Path to save to (uses existing path if None)
-
-        Returns:
-            True if successful
-        """
-        if file_path is None:
-            file_path = self.file_path
-
-        if file_path is None:
-            logger.error("No file path specified for save")
-            return False
-
-        try:
-            data = self._to_dict()
-
-            with open(file_path, 'w') as f:
-                json.dump(data, f, indent=2, default=str)
-
-            self.file_path = file_path
-            self._modified = False
-
-            logger.info(f"Saved model to {file_path}")
+    def remove_grid(self, grid_id: UUID) -> bool:
+        """Remove a grid system from the model."""
+        # Remove from _grids list
+        grid = next((g for g in self._grids if g.id == grid_id), None)
+        if grid:
+            self._grids.remove(grid)
+            # Remove from elements map
+            self.remove_element(grid_id)
             return True
+        return False
 
-        except Exception as e:
-            logger.error(f"Failed to save model: {e}")
-            return False
+    def get_grids(self) -> List[GridSystem]:
+        """Get all grid systems."""
+        return self._grids.copy()
 
-    def load(self, file_path: Path) -> bool:
-        """
-        Load model from file.
+    def add_level(self, level: Level) -> UUID:
+        """Add a level to the model."""
+        self._levels.append(level)
+        self._levels.sort(key=lambda l: l.elevation)
+        # Also add to elements map
+        self.add_element(level)
+        return level.id
 
-        Args:
-            file_path: Path to load from
-
-        Returns:
-            True if successful
-        """
-        try:
-            with open(file_path, 'r') as f:
-                data = json.load(f)
-
-            self._from_dict(data)
-            self.file_path = file_path
-            self._modified = False
-
-            logger.info(f"Loaded model from {file_path}")
-            self.model_changed.emit()
+    def remove_level(self, level_id: UUID) -> bool:
+        """Remove a level from the model."""
+        level = next((l for l in self._levels if l.id == level_id), None)
+        if level:
+            self._levels.remove(level)
+            self.remove_element(level_id)
             return True
+        return False
 
-        except Exception as e:
-            logger.error(f"Failed to load model: {e}")
-            return False
+    def get_levels(self) -> List[Level]:
+        """Get all levels sorted by elevation."""
+        return self._levels.copy()
 
-    def _to_dict(self) -> dict:
-        """Serialize model to dictionary."""
-        return {
-            "name": self.name,
-            "author": self.author,
-            "description": self.description,
-            "elements": {
-                str(id): self._element_to_dict(elem)
-                for id, elem in self._elements.items()
-            },
-            "grids": [],  # TODO: Serialize grids
-            "levels": [],  # TODO: Serialize levels
-        }
-
-    def _element_to_dict(self, element: StructuralElement) -> dict:
-        """Serialize element to dictionary."""
-        # Base properties
-        data = {
-            "type": element.element_type.value,
-            "name": element.name,
-            "material": element.material.name if element.material else None,
-            "profile": element.profile.name if element.profile else None,
-        }
-        # Add element-specific properties
-        data.update(element.get_properties())
-        return data
-
-    def _from_dict(self, data: dict):
-        """Deserialize model from dictionary."""
-        self.name = data.get("name", "Untitled")
-        self.author = data.get("author", "")
-        self.description = data.get("description", "")
-
-        # Clear existing
-        self._elements.clear()
-        self._selected_ids.clear()
-
-        # Load elements
-        # TODO: Implement element deserialization
-        logger.warning("Element deserialization not yet implemented")
-
-    def clear(self):
-        """Clear all elements from model."""
-        self._elements.clear()
-        self._selected_ids.clear()
-        self._undo_stack.clear()
-        self._redo_stack.clear()
-        self._grids.clear()
-        self._levels.clear()
-        self._modified = True
-        self.numbering.reset()  # Reset part numbering
-
-        self.model_changed.emit()
-        self.selection_changed.emit([])
-
-        logger.info("Model cleared")
-
-    def get_bounding_box(self) -> tuple:
-        """
-        Get bounding box of entire model.
-
-        Returns:
-            Tuple of (min_point, max_point)
-        """
-        from src.geometry.point import Point3D
-
-        if not self._elements:
-            return (Point3D.origin(), Point3D(1000, 1000, 1000))
-
-        min_pt = Point3D(float('inf'), float('inf'), float('inf'))
-        max_pt = Point3D(float('-inf'), float('-inf'), float('-inf'))
-
-        for element in self._elements.values():
-            elem_min, elem_max = element.get_bounding_box()
-
-            min_pt = Point3D(
-                min(min_pt.x, elem_min.x),
-                min(min_pt.y, elem_min.y),
-                min(min_pt.z, elem_min.z)
-            )
-            max_pt = Point3D(
-                max(max_pt.x, elem_max.x),
-                max(max_pt.y, elem_max.y),
-                max(max_pt.z, elem_max.z)
-            )
-
-        return (min_pt, max_pt)
+    def get_level_at_elevation(self, elevation: float, tolerance: float = 1.0) -> Optional[Level]:
+        """Get level at specific elevation."""
+        for level in self._levels:
+            if abs(level.elevation - elevation) < tolerance:
+                return level
+        return None
 
 
-class Command:
-    """Base class for undoable commands."""
-
-    def execute(self, model: StructuralModel):
-        """Execute the command."""
-        raise NotImplementedError
-
-    def undo(self, model: StructuralModel):
-        """Undo the command."""
-        raise NotImplementedError
+class Command(ABC):
+    """Abstract base class for commands."""
+    
+    @abstractmethod
+    def execute(self, model: "StructuralModel"):
+        pass
+        
+    @abstractmethod
+    def undo(self, model: "StructuralModel"):
+        pass
 
 
 class AddElementCommand(Command):
     """Command to add an element."""
-
+    
     def __init__(self, element: StructuralElement):
         self.element = element
-        self.element_id = element.id
-
-    def execute(self, model: StructuralModel):
-        # Use public add_element() which handles numbering, signals, and modified flag
-        model.add_element(self.element)
-
-    def undo(self, model: StructuralModel):
-        # Use public remove_element() for proper cleanup
-        model.remove_element(self.element_id)
+        self._added_id = None
+        
+    def execute(self, model: "StructuralModel"):
+        # If element is already in model (redo case), ensure we don't duplicate logic if needed
+        # But add_element handles it.
+        self._added_id = model.add_element(self.element)
+        
+    def undo(self, model: "StructuralModel"):
+        if self._added_id:
+            model.remove_element(self._added_id)
 
 
 class RemoveElementCommand(Command):
     """Command to remove an element."""
-
-    def __init__(self, element: StructuralElement):
-        self.element = element
-        self.element_id = element.id
-        # Store the part number so we can restore it on undo
-        self._saved_part_number = element.part_number
-
-    def execute(self, model: StructuralModel):
-        # Use public remove_element() for proper cleanup
-        model.remove_element(self.element_id)
-
-    def undo(self, model: StructuralModel):
-        # Restore the saved part number before adding back
-        self.element.part_number = self._saved_part_number
-        # Use public add_element() to restore element with proper handling
-        model.add_element(self.element)
+    
+    def __init__(self, element_id: UUID):
+        self.element_id = element_id
+        self.element = None
+        
+    def execute(self, model: "StructuralModel"):
+        self.element = model.get_element(self.element_id)
+        if self.element:
+            model.remove_element(self.element_id)
+            
+    def undo(self, model: "StructuralModel"):
+        if self.element:
+            model.add_element(self.element)

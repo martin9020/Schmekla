@@ -222,10 +222,10 @@ class CurvedBeam(StructuralElement):
         """
         try:
             import cadquery as cq
-            from OCC.Core.gp import gp_Pnt, gp_Dir, gp_Ax2
-            from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_MakePipe
-            from OCC.Core.GC import GC_MakeArcOfCircle
-            from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire
+            from OCP.gp import gp_Pnt, gp_Dir, gp_Ax2
+            from OCP.BRepOffsetAPI import BRepOffsetAPI_MakePipe
+            from OCP.GC import GC_MakeArcOfCircle
+            from OCP.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire
 
             logger.debug(f"Generating solid for curved beam {self._id}")
 
@@ -263,8 +263,8 @@ class CurvedBeam(StructuralElement):
         """Create profile shape for sweeping."""
         try:
             import cadquery as cq
-            from OCC.Core.gp import gp_Pnt, gp_Dir, gp_Ax2, gp_Circ
-            from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire, BRepBuilderAPI_MakeFace
+            from OCP.gp import gp_Pnt, gp_Dir, gp_Ax2, gp_Circ
+            from OCP.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire, BRepBuilderAPI_MakeFace
 
             # For CHS profiles, create circular face
             if self._profile and "CHS" in self._profile.name:

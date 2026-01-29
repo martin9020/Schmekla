@@ -57,10 +57,10 @@ echo.
 echo [5/5] Creating launcher script...
 (
 echo @echo off
-echo cd /d "%CD%"
+echo cd /d "%%CD%%"
 echo call venv\Scripts\activate.bat
 echo python -m src.main
-echo pause
+echo if errorlevel 1 pause
 ) > run_schmekla.bat
 
 echo.

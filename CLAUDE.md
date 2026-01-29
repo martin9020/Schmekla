@@ -22,21 +22,24 @@ This ensures knowledge persists across Claude's context window limitations.
 
 **Schmekla** is a custom structural modeling application designed to create 3D structural steel/concrete models and export them to IFC format for import into Tekla Structures. The application includes Claude Code CLI integration for natural language model creation and modification.
 
+**Version:** 0.1.0
+**Target Platform:** Windows 10/11
+**Python:** 3.12+ (also compatible with 3.11+)
+**Status:** Alpha / Active Development
+
 ## Quick Start for Claude Code
 
 ```bash
 # Navigate to project
-cd Schmekla
+cd Schmekla-Test-Launch
 
-# Option 1: Use install script (recommended)
-deploy\install.bat
+# Option 1: One-click launcher (recommended)
+Schmekla.bat
 
 # Option 2: Manual setup
-python -m venv venv
+py -3.12 -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
-
-# Run the application
 python -m src.main
 ```
 
@@ -53,9 +56,9 @@ Schmekla/
 ├── Conditions/          # Project-specific data
 ├── requirements.txt
 ├── pyproject.toml
+├── Schmekla.bat         # One-click launcher
 ├── README.md
-├── CLAUDE.md
-└── run_schmekla.bat     # (created by install.bat)
+└── CLAUDE.md
 ```
 
 ### Files to EXCLUDE:
@@ -70,8 +73,7 @@ output/                  # Generated IFC files
 ### On Target Machine:
 ```bash
 cd Schmekla
-deploy\install.bat       # Creates venv, installs deps
-run_schmekla.bat         # Launch application
+Schmekla.bat             # Creates venv, installs deps, launches app
 ```
 
 ## Project Structure
@@ -81,162 +83,264 @@ Schmekla/
 ├── CLAUDE.md                 # This file - Claude Code instructions
 ├── README.md                 # User-facing documentation
 ├── IMPLEMENTATION_PLAN.md    # Detailed implementation roadmap
-├── requirements.txt          # Python dependencies
-├── pyproject.toml           # Project configuration
-├── setup.py                 # Package setup
-├── .gitignore               # Git ignore (excludes venv, cache, etc.)
-├── run_schmekla.bat         # Launcher script (created by install.bat)
+├── DEVLOG.md                 # Development log for cross-AI session tracking
+├── requirements.txt          # Python dependencies (83 packages)
+├── pyproject.toml            # Project configuration
+├── Schmekla.bat              # One-click launcher (venv + deps + launch)
+├── .gitignore                # Git ignore (excludes venv, cache, etc.)
 │
-├── deploy/                  # Deployment scripts
-│   └── install.bat          # Auto-install script for new machines
+├── .claude/                  # Claude Code agent profiles & settings
+│   ├── agents/               # 12 specialized agent definitions
+│   │   ├── schmekla-boss.md      # Orchestrator (Opus)
+│   │   ├── schmekla-architect.md # System Designer (Opus, renamed from architect.md)
+│   │   ├── schmekla-researcher.md# Investigation Specialist (Sonnet)
+│   │   ├── schmekla-coder.md     # General Implementation (Sonnet)
+│   │   ├── schmekla-vtk.md       # PyVista/VTK Specialist (Sonnet)
+│   │   ├── schmekla-ifc.md       # IFC/Structural Domain Expert (Sonnet)
+│   │   ├── schmekla-tester.md    # Test Automation (Haiku)
+│   │   ├── schmekla-reviewer.md  # Code Quality (Haiku)
+│   │   ├── schmekla-security.md  # Security Audit (Sonnet)
+│   │   ├── schmekla-debugger.md  # Error Resolution (Haiku)
+│   │   ├── schmekla-documenter.md# Documentation (Haiku)
+│   │   └── schmekla-devops.md    # Release Management (Haiku)
+│   ├── package-manager.json
+│   └── settings.json
 │
-├── Conditions/              # Project data folder (client specs, drawings)
-│   └── For Installers/      # Installer documentation
+├── knowledge/                # Knowledge base for session continuity
+│   ├── LEARNED.md            # Technical lessons learned
+│   ├── SESSION_*.md          # Session notes
+│   └── Last Conversation.txt # Previous session transcript
+│
+├── deploy/                   # Deployment scripts
+│   └── install.bat           # Auto-install script for new machines
+│
+├── Conditions/               # Project data folder (client specs, drawings)
+│   └── For Installers/       # Installer documentation
 │
 ├── src/
 │   ├── __init__.py
-│   ├── main.py              # Application entry point
-│   ├── app.py               # Main application class
+│   ├── main.py               # Application entry point
 │   │
-│   ├── core/                # Core data models
+│   ├── core/                 # Core data models
 │   │   ├── __init__.py
-│   │   ├── model.py         # StructuralModel - main document
-│   │   ├── project.py       # Project management
-│   │   ├── element.py       # Base structural element class
-│   │   ├── beam.py          # Beam element
-│   │   ├── column.py        # Column element
-│   │   ├── plate.py         # Plate element
-│   │   ├── slab.py          # Slab element
-│   │   ├── wall.py          # Wall element
-│   │   ├── footing.py       # Footing element
-│   │   ├── grid.py          # Grid system
-│   │   ├── level.py         # Building levels
-│   │   ├── material.py      # Material definitions
-│   │   └── profile.py       # Section profiles
+│   │   ├── model.py          # StructuralModel - main document
+│   │   ├── element.py        # Base structural element class
+│   │   ├── beam.py           # Beam element
+│   │   ├── column.py         # Column element
+│   │   ├── plate.py          # Plate element
+│   │   ├── slab.py           # Slab element
+│   │   ├── wall.py           # Wall element
+│   │   ├── footing.py        # Footing element
+│   │   ├── bolt.py           # BoltGroup connection element
+│   │   ├── weld.py           # Weld connection element
+│   │   ├── curved_beam.py    # Curved beam (barrel roofs)
+│   │   ├── grid.py           # Grid system
+│   │   ├── level.py          # Building levels
+│   │   ├── drawing.py        # Drawing entities
+│   │   ├── drawing_manager.py # Drawing management logic
+│   │   ├── numbering.py      # Tekla-style part numbering
+│   │   ├── snap_manager.py   # Snap-to-grid/endpoint functionality
+│   │   ├── material.py       # Material definitions
+│   │   ├── profile.py        # Section profiles/catalogs
+│   │   └── commands/         # Command pattern implementations
+│   │       └── numbering_commands.py
 │   │
-│   ├── geometry/            # Geometric operations
+│   ├── geometry/             # 3D geometry operations
 │   │   ├── __init__.py
-│   │   ├── point.py         # Point3D class
-│   │   ├── vector.py        # Vector3D class
-│   │   ├── line.py          # Line/segment class
-│   │   ├── plane.py         # Plane class
-│   │   ├── transform.py     # Transformation matrices
-│   │   ├── solid.py         # Solid geometry operations
-│   │   ├── boolean.py       # Boolean operations
-│   │   └── mesh.py          # Mesh generation for display
+│   │   ├── point.py          # Point3D class
+│   │   ├── vector.py         # Vector3D class
+│   │   ├── line.py           # Line/segment class
+│   │   ├── plane.py          # Plane class
+│   │   └── transform.py      # Transformation matrices
 │   │
-│   ├── ui/                  # User interface (PySide6)
+│   ├── drawing/              # Drawing generation engine
+│   │   └── view_generator.py # 2D projection engine
+│   │
+│   ├── ui/                   # User interface (PySide6)
 │   │   ├── __init__.py
-│   │   ├── main_window.py   # Main application window
-│   │   ├── viewport.py      # 3D OpenGL viewport
-│   │   ├── model_tree.py    # Model hierarchy tree
-│   │   ├── properties.py    # Properties panel
-│   │   ├── toolbar.py       # Tool bars
-│   │   ├── ribbon.py        # Ribbon interface
-│   │   ├── dialogs/         # Dialog windows
+│   │   ├── main_window.py    # Main application window
+│   │   ├── viewport.py       # 3D PyVista/VTK viewport
+│   │   ├── interaction.py    # Interactive element creation modes
+│   │   ├── dialogs/          # Dialog windows
 │   │   │   ├── __init__.py
 │   │   │   ├── beam_dialog.py
 │   │   │   ├── column_dialog.py
 │   │   │   ├── plate_dialog.py
 │   │   │   ├── grid_dialog.py
-│   │   │   ├── profile_dialog.py
-│   │   │   ├── material_dialog.py
-│   │   │   ├── export_dialog.py
-│   │   │   ├── plan_import_dialog.py # Plan upload & auto-generate
-│   │   │   └── claude_dialog.py      # Claude prompt interface
-│   │   ├── widgets/         # Custom widgets
+│   │   │   ├── plan_import_dialog.py  # Plan upload & auto-generate
+│   │   │   ├── export_dialog.py       # IFC export settings
+│   │   │   ├── batch_edit_dialog.py   # Multi-element batch editing
+│   │   │   └── numbering_dialog.py    # Tekla-style numbering config
+│   │   ├── windows/          # Application windows
 │   │   │   ├── __init__.py
-│   │   │   ├── coordinate_input.py
-│   │   │   ├── profile_selector.py
-│   │   │   ├── material_selector.py
-│   │   │   └── claude_terminal.py    # Claude CLI launcher widget
-│   │   └── styles/          # QSS stylesheets
-│   │       └── dark_theme.qss
+│   │   │   ├── drawing_list_window.py  # Drawing List (Ctrl+L)
+│   │   │   └── drawing_editor_window.py # Drawing Editor
+│   │   └── widgets/          # Custom widgets
+│   │       ├── __init__.py
+│   │       ├── claude_terminal.py      # Claude CLI launcher widget
+│   │       └── properties_panel.py     # Tekla-style properties panel
 │   │
-│   ├── ifc/                 # IFC export functionality
+│   ├── ifc/                  # IFC export functionality
 │   │   ├── __init__.py
-│   │   ├── exporter.py      # Main IFC export class
-│   │   ├── ifc_model.py     # IFC model wrapper
-│   │   ├── ifc_beam.py      # Beam to IFC conversion
-│   │   ├── ifc_column.py    # Column to IFC conversion
-│   │   ├── ifc_plate.py     # Plate to IFC conversion
-│   │   ├── ifc_slab.py      # Slab to IFC conversion
-│   │   ├── ifc_wall.py      # Wall to IFC conversion
-│   │   ├── ifc_footing.py   # Footing to IFC conversion
-│   │   ├── ifc_profile.py   # Profile definitions for IFC
-│   │   ├── ifc_material.py  # Material mapping for IFC
-│   │   ├── ifc_grid.py      # Grid export to IFC
-│   │   └── ifc_utils.py     # IFC utility functions
+│   │   ├── exporter.py       # Main IFC export class
+│   │   ├── ifc_beam.py       # Beam → IFC conversion
+│   │   ├── ifc_column.py     # Column → IFC conversion
+│   │   ├── ifc_plate.py      # Plate → IFC conversion
+│   │   ├── ifc_slab.py       # Slab → IFC conversion
+│   │   ├── ifc_wall.py       # Wall → IFC conversion
+│   │   ├── ifc_footing.py    # Footing → IFC conversion
+│   │   ├── ifc_curved_beam.py # Curved beam → IFC
+│   │   └── ifc_grid.py       # Grid → IFC
 │   │
-│   ├── claude_integration/  # Claude Code CLI integration
+│   ├── claude_integration/   # Claude Code CLI integration
 │   │   ├── __init__.py
-│   │   ├── claude_bridge.py # Bridge to Claude Code CLI
-│   │   ├── plan_analyzer.py # Analyze drawings with Claude Vision
-│   │   ├── prompt_parser.py # Parse natural language to commands
-│   │   ├── model_commands.py# Execute model modifications
-│   │   ├── context_builder.py# Build context for Claude
-│   │   └── response_handler.py# Handle Claude responses
+│   │   ├── claude_bridge.py  # Programmatic CLI bridge
+│   │   └── plan_analyzer.py  # Vision-based plan analysis
 │   │
-│   ├── components/          # Parametric component library
-│   │   ├── __init__.py
-│   │   ├── base_component.py
-│   │   ├── portal_frame.py  # Portal frame generator
-│   │   ├── bracing.py       # Bracing patterns
-│   │   ├── purlin_system.py # Purlin/girt system
-│   │   └── floor_system.py  # Floor framing system
+│   ├── ai/                   # AI/ML modules
+│   │   ├── document_processor.py
+│   │   ├── dwg_processor.py
+│   │   ├── embeddings.py
+│   │   ├── rag_engine.py
+│   │   └── vector_store.py
 │   │
-│   └── utils/               # Utilities
+│   └── utils/                # Utilities
 │       ├── __init__.py
-│       ├── config.py        # Configuration management
-│       ├── logger.py        # Logging setup
-│       ├── units.py         # Unit conversion
-│       ├── serialization.py # Save/load project files
-│       └── validators.py    # Input validation
+│       ├── config.py         # Configuration management
+│       ├── logger.py         # Logging setup
+│       └── units.py          # Unit conversion
 │
-├── resources/               # Static resources
-│   ├── icons/              # UI icons
-│   ├── profiles/           # Steel profile databases
-│   │   ├── uk_sections.json
+├── resources/                # Static resources
+│   ├── icons/               # UI icons
+│   ├── profiles/            # Steel profile databases
+│   │   ├── uk_sections.json  # 31 UK profiles
 │   │   ├── eu_sections.json
 │   │   └── us_sections.json
-│   └── materials/          # Material databases
-│       └── materials.json
+│   └── materials/           # Material databases
+│       └── materials.json    # 7 standard materials
 │
-├── tests/                   # Test suite
+├── tests/                    # Test suite (pytest)
 │   ├── __init__.py
-│   ├── conftest.py         # Pytest fixtures
 │   ├── unit/
-│   │   ├── test_geometry.py
-│   │   ├── test_elements.py
-│   │   └── test_ifc_export.py
 │   └── integration/
-│       ├── test_model_operations.py
-│       └── test_claude_integration.py
 │
-├── docs/                    # Documentation
-│   ├── architecture/
-│   │   ├── overview.md
-│   │   ├── data_model.md
-│   │   └── ifc_mapping.md
-│   └── api/
-│       └── api_reference.md
-│
-└── examples/                # Example scripts
-    ├── simple_frame.py
-    ├── portal_frame.py
-    └── multi_story.py
+├── output/                   # Generated IFC export files
+├── projects/                 # Project context files
+└── docs/                     # Documentation
 ```
 
 ## Technology Stack
 
 | Component | Technology | Purpose |
 |-----------|------------|---------|
-| Language | Python 3.11+ | Primary development language |
+| Language | Python 3.12+ (3.11+ compatible) | Primary development language |
 | UI Framework | PySide6 (Qt 6) | Desktop GUI |
 | 3D Rendering | PyVista + VTK | 3D viewport |
-| Geometry Kernel | CadQuery + OCC | Parametric solid modeling |
-| IFC Export | IfcOpenShell | IFC file generation |
+| Geometry Kernel | CadQuery + OCP (cadquery-ocp) | Parametric solid modeling |
+| IFC Export | IfcOpenShell 0.8+ | IFC file generation |
 | Claude Integration | subprocess + API | AI-assisted modeling |
+| PDF Processing | PyMuPDF | Plan drawing import |
+
+### CRITICAL: OCP Import Convention
+
+The OpenCascade bindings come from `cadquery-ocp`, which uses the `OCP` namespace (**NOT** `OCC.Core`):
+
+```python
+# CORRECT:
+from OCP.gp import gp_Pnt, gp_Dir, gp_Ax2
+from OCP.BRepMesh import BRepMesh_IncrementalMesh
+from OCP.BRepBndLib import BRepBndLib
+BRepBndLib.Add_s(solid, bbox)        # Note: static method with _s suffix
+BRep_Tool.Triangulation_s(face, loc) # Same pattern for all static methods
+
+# WRONG (old pythonocc convention - DO NOT USE):
+from OCC.Core.gp import gp_Pnt   # WILL FAIL
+```
+
+## Agent Ecosystem
+
+Schmekla uses a 12-agent orchestration system defined in `.claude/agents/`:
+
+### Orchestration Layer (Opus)
+| Agent | Role | Key Responsibility |
+|-------|------|--------------------|
+| **schmekla-boss** | Project Manager | Task decomposition, coordination, quality gates |
+| **schmekla-architect** | System Designer | Architecture design, trade-off analysis |
+
+### Implementation Layer (Sonnet)
+| Agent | Role | Key Responsibility |
+|-------|------|--------------------|
+| **schmekla-researcher** | Investigation | Bug tracing, API research, code exploration (read-only) |
+| **schmekla-coder** | General Dev | Python implementation, environment setup, dependency management |
+| **schmekla-vtk** | VTK Specialist | 3D viewport, picking, coordinate transforms, VTK actors |
+| **schmekla-ifc** | IFC Expert | IFC export, IfcOpenShell, Tekla compatibility |
+| **schmekla-security** | Security Audit | Vulnerability detection, dependency scanning |
+
+### Quality Assurance Layer (Haiku)
+| Agent | Role | Key Responsibility |
+|-------|------|--------------------|
+| **schmekla-tester** | Test Automation | pytest, pytest-qt, coverage (80%+ target) |
+| **schmekla-reviewer** | Code Quality | Pattern compliance, code review |
+| **schmekla-debugger** | Error Resolution | Minimal-diff surgical fixes |
+| **schmekla-documenter** | Documentation | LEARNED.md, DEVLOG.md, phase tracking |
+| **schmekla-devops** | Release Mgmt | Environment, builds, packaging, versioning |
+
+### Quality Gates
+| Gate | Name | When |
+|------|------|------|
+| QG-01 | Requirements Validation | Before design |
+| QG-02 | Design Review | Before implementation |
+| QG-03 | Build Verification | After code changes |
+| QG-04 | Code Review | Before merge |
+| QG-05 | Test Coverage | Before feature complete |
+| QG-06 | Security Scan | Before release |
+| QG-07 | Documentation Check | Before feature complete |
+| QG-08 | Application Verification | Before task closure |
+
+### Workflow Patterns
+- **New Feature:** Boss → Architect → [Coder/VTK/IFC] → Tester → Reviewer → Boss
+- **Bug Fix:** Boss → Researcher → Debugger → Tester → Reviewer → Boss
+- **Release:** Boss → Tester → Security → Reviewer → Documenter → DevOps → Boss
+
+## Recent Features (Jan 2026)
+
+### 1. Connection Elements
+- **BoltGroup**: Parametric bolt arrays (linear/grid). Interactive creation via "Modeling" > "Create Bolt Group" or toolbar.
+  - One-click origin selection.
+  - Visualization: Grey cylinders.
+- **Weld**: Logical weld connections between Main and Secondary parts. Interactive creation via "Modeling" > "Create Weld".
+  - Two-step selection (Main Part -> Secondary Part).
+  - Visualization: Magenta spheres at connection point.
+
+### 2. Interactive Modeling Workflows
+- **Two-Point Creation**: Beams (pick start + end).
+- **One-Click Creation**: Columns, Bolt Groups (pick position).
+- **Two-Step Selection**: Welds (select main part → secondary part).
+- **Multi-Point Creation**: Plates (pick 4 corner points).
+- **Copy/Move Modes**: Two-point displacement (base point → destination).
+- **Status Bar Prompts**: Real-time guidance during interaction modes.
+
+### 3. Snapping System
+- **Grid Snap** (F4): Snap to structural grid intersections (yellow indicator).
+- **Endpoint Snap** (F5): Snap to element start/end points (cyan indicator).
+- **Midpoint Snap**: Snap to element midpoints (magenta indicator).
+- **Toggle All Snaps** (F3): Master snap toggle.
+- **In-viewport toggles**: G (grid), E (endpoint).
+
+### 4. Selection System
+- **Single click**: Select individual element.
+- **Ctrl+click**: Add/remove from multi-selection.
+- **Box selection**: Left-to-right = window (enclosed), right-to-left = crossing (intersecting).
+- **Batch editing**: Modify profile/material/phase on multiple elements.
+
+### 5. Tekla-Style Numbering
+- Identical parts detection (profile, material, geometry tolerance, rotation).
+- Series-based numbering with configurable prefix/start/step per element type.
+- Preview and renumber-all with undo support.
+
+### 6. Dependency Management
+- **Schmekla.bat**: Stepped installation (Core → UI → Geometry → Finalize) with error handling.
+- **Virtual Environment**: Python 3.12+ local `venv/`.
 
 ## Key Design Decisions
 
@@ -254,17 +358,14 @@ Model changes emit signals that update:
 - Properties panel
 
 ### 3. Command Pattern for Undo/Redo
-All model modifications go through command objects:
-- `CreateElementCommand`
-- `ModifyElementCommand`
-- `DeleteElementCommand`
-- `TransformElementCommand`
+All model modifications go through command objects with 100-step undo history.
 
 ### 4. IFC Export Strategy
 Export uses IFC2X3 (Tekla certified):
 - Each element type has dedicated IFC mapper
 - Profiles map to IfcParameterizedProfileDef where possible
 - Materials map to IfcMaterial with properties
+- **IMPORTANT**: IfcOpenShell 0.8+ requires `products=[]` parameter (not `product=`)
 
 ## Claude Integration Architecture
 
@@ -279,8 +380,8 @@ The Claude Terminal panel in Schmekla launches Claude CLI in a proper terminal w
 │  Schmekla Application                        │
 │  ┌───────────────────────────────────────┐  │
 │  │  Claude Terminal Panel                 │  │
-│  │  [🚀 Open Claude in Terminal]          │  │
-│  │  [📂 Open in Conditions Folder]        │  │
+│  │  [Open Claude in Terminal]             │  │
+│  │  [Open in Conditions Folder]           │  │
 │  └───────────────────────────────────────┘  │
 └─────────────────────────────────────────────┘
                     │
@@ -330,45 +431,6 @@ User Uploads Plan Image (PNG/JPG/PDF)
 
 ## Plan Import Architecture (Vision-Based Auto-Generation)
 
-The Plan Import feature uses Claude's vision capabilities to analyze structural drawings and automatically generate models:
-
-```
-User Uploads Plan Image (PNG/JPG/PDF)
-        │
-        ▼
-┌─────────────────────────┐
-│   PlanImportDialog      │
-│   - File selection      │
-│   - Plan type setting   │
-│   - Scale setting       │
-└───────────┬─────────────┘
-            │
-            ▼
-┌─────────────────────────┐
-│   AnalysisWorker        │
-│   (QThread background)  │
-└───────────┬─────────────┘
-            │
-            ▼
-┌─────────────────────────┐
-│   PlanAnalyzer          │
-│   - Call Claude CLI     │
-│   - Pass image + prompt │
-│   - Parse JSON response │
-└───────────┬─────────────┘
-            │
-            ▼
-┌─────────────────────────┐
-│   ClaudeBridge          │
-│   - Execute commands    │
-│   - Create elements     │
-│   - Track created items │
-└───────────┬─────────────┘
-            │
-            ▼
-    Model Populated + 3D View Updated
-```
-
 ### Supported Plan Types
 
 | Plan Type | Detection Capabilities |
@@ -378,11 +440,107 @@ User Uploads Plan Image (PNG/JPG/PDF)
 | Grid Layout | Grid line positions and spacings |
 | Section View | Cross-section dimensions, internal structure |
 
-### Key Files
+### Drawing Management (Tekla-like)
 
-- `src/claude_integration/plan_analyzer.py` - Vision analysis and command generation
-- `src/ui/dialogs/plan_import_dialog.py` - User interface for plan upload
-- `src/claude_integration/claude_bridge.py` - Command execution
+- **Drawing List**: Accessible via `Ctrl+L`. Mimics Tekla Structures.
+- **Numbering**: Integrated numbering engine for part marking.
+- **Drawing Editor**: Double-click drawing to open. Supports auto-dimensions.
+
+## Complete Keyboard Shortcuts
+
+### File Operations
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+N` | New model |
+| `Ctrl+O` | Open model |
+| `Ctrl+S` | Save model |
+| `Ctrl+Shift+S` | Save As |
+| `Ctrl+E` | Export IFC |
+| `Ctrl+Q` | Exit |
+
+### Edit Operations
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+Z` | Undo |
+| `Ctrl+Y` | Redo |
+| `Ctrl+A` | Select All |
+| `Delete` | Delete selected |
+| `Ctrl+Shift+C` | Copy mode |
+| `Ctrl+Shift+M` | Move mode |
+| `Esc` | Cancel / return to IDLE |
+
+### Viewing
+| Shortcut | Action |
+|----------|--------|
+| `F` | Zoom to Fit |
+| `1` | Front View |
+| `2` | Top View |
+| `3` | Right View |
+| `0` | Isometric View |
+
+### Creation
+| Shortcut | Action |
+|----------|--------|
+| `B` | Create Beam (two-point) |
+| `C` | Create Column (one-point) |
+| `P` | Create Plate (four-point) |
+| `G` | Create Grid |
+
+### Tools
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+L` | Drawing List |
+| `F3` | Toggle All Snaps |
+| `F4` | Toggle Grid Snap |
+| `F5` | Toggle Endpoint Snap |
+
+### Claude Integration
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+I` | Import Plan |
+| `Ctrl+Space` | Open Claude Prompt |
+| `` Ctrl+` `` | Toggle Claude Terminal |
+
+### In-Viewport
+| Shortcut | Action |
+|----------|--------|
+| `M` | Toggle start/end markers |
+| `G` | Toggle grid snap |
+| `E` | Toggle endpoint snap |
+
+### Mouse Controls
+| Action | Effect |
+|--------|--------|
+| Left click | Select / pick point |
+| Left drag | Box selection |
+| Ctrl+click | Multi-select toggle |
+| Ctrl+Right drag | Rotate viewport |
+| Right drag | Zoom |
+| Middle drag | Pan |
+| Scroll wheel | Zoom |
+
+## Menus Reference
+
+### File Menu
+New, Open, Save, Save As, Export IFC, Exit
+
+### Edit Menu
+Undo, Redo, Select All, Delete, Copy, Move
+
+### View Menu
+Zoom to Fit, Front/Top/Right/Isometric views
+
+### Modeling Menu
+Create Beam, Create Column, Create Plate, Create Bolt Group, Create Weld, Create Grid
+
+### Tools Menu
+Numbering Settings, Drawing List, Toggle All/Grid/Endpoint Snaps
+
+### Claude Menu
+Import Plan, Open Prompt, Toggle Terminal
+
+### Help Menu
+About Schmekla
 
 ## Common Development Tasks
 
@@ -390,14 +548,12 @@ User Uploads Plan Image (PNG/JPG/PDF)
 
 1. Create class in `src/core/new_element.py`:
 ```python
-from src.core.element import StructuralElement
+from src.core.element import StructuralElement, ElementType
 
 class NewElement(StructuralElement):
-    element_type = "NEW_ELEMENT"
-
     def __init__(self, ...):
         super().__init__()
-        # Element-specific initialization
+        self.element_type = ElementType.NEW_ELEMENT
 
     def generate_solid(self):
         # Return OCC solid geometry
@@ -408,52 +564,18 @@ class NewElement(StructuralElement):
         pass
 ```
 
-2. Create IFC mapper in `src/ifc/ifc_new_element.py`
-
-3. Add dialog in `src/ui/dialogs/new_element_dialog.py`
-
-4. Register in element factory
-
-5. Add tests in `tests/unit/test_new_element.py`
-
-### Adding a Claude Command
-
-1. Add command definition to `src/claude_integration/model_commands.py`:
-```python
-@register_command("create_beam")
-def create_beam_command(model, params):
-    """Create a beam from start to end point."""
-    start = Point3D(*params["start"])
-    end = Point3D(*params["end"])
-    profile = params.get("profile", "UB 305x165x40")
-    beam = Beam(start, end, profile)
-    model.add_element(beam)
-    return {"success": True, "element_id": str(beam.id)}
-```
-
-2. Update context in `src/claude_integration/context_builder.py`
+2. Add `NEW_ELEMENT` to `ElementType` enum in `src/core/element.py`
+3. Create IFC mapper in `src/ifc/ifc_new_element.py`
+4. Add dialog in `src/ui/dialogs/new_element_dialog.py`
+5. Register in element factory
+6. Add tests in `tests/unit/test_new_element.py`
 
 ### Running Tests
 
 ```bash
-# All tests
 pytest
-
-# Specific test file
 pytest tests/unit/test_geometry.py
-
-# With coverage
 pytest --cov=src
-```
-
-### Building Executable
-
-```bash
-# Install PyInstaller
-pip install pyinstaller
-
-# Build
-pyinstaller --onefile --windowed src/main.py --name Schmekla
 ```
 
 ## IFC Export Checklist
@@ -467,6 +589,7 @@ For Tekla compatibility, ensure:
 - [ ] Coordinate system matches expected orientation
 - [ ] Units are consistent (millimeters recommended)
 - [ ] Property sets include required attributes
+- [ ] Use `products=[]` parameter (IfcOpenShell 0.8+ API)
 
 ## Coding Standards
 
@@ -483,22 +606,21 @@ For Tekla compatibility, ensure:
 - Private: leading underscore (`_internal_method`)
 
 ### Error Handling
-- Use custom exceptions from `src/utils/exceptions.py`
 - Always log errors before raising
 - Provide meaningful error messages
+- Use try/except with graceful fallbacks for OCP operations
 
 ## Dependencies Quick Reference
 
 ```python
 # Core
 import ifcopenshell           # IFC creation
-from OCC.Core import ...      # OpenCascade geometry
+from OCP.gp import gp_Pnt    # OpenCascade geometry (via cadquery-ocp)
 import cadquery as cq         # High-level CAD
 
 # UI
 from PySide6.QtWidgets import ...
 from PySide6.QtCore import ...
-from PySide6.QtOpenGL import ...
 import pyvista as pv          # 3D visualization
 
 # Utils
@@ -512,16 +634,29 @@ from loguru import logger     # Logging
 - Check OpenGL context is created before rendering
 - Verify mesh normals are correct
 - Use `pyvista.global_theme.background = 'white'` for visibility
+- Read `knowledge/LEARNED.md` for VTK interaction patterns
 
 ### IFC Export Issues
 - Use IFC viewer (BIM Vision, FZK Viewer) to inspect output
 - Check `ifcopenshell.validate` for schema compliance
 - Log all IFC entity creations
+- Use `products=[]` not `product=` (IfcOpenShell 0.8+ breaking change)
+
+### OCP/Geometry Issues
+- Import from `OCP.*` not `OCC.Core.*`
+- Static methods use `_s` suffix (e.g., `BRepBndLib.Add_s()`)
+- If OCP unavailable, elements fall back to simple box geometry
 
 ### Claude Integration Issues
 - Test CLI bridge independently first
 - Log full prompts and responses
 - Validate JSON responses before parsing
+
+## Known Issues
+
+1. **OCC fallback rendering**: When CadQuery/OCP solid generation fails, elements render as simplified boxes/tubes instead of accurate profile shapes. The element is still created correctly in the model.
+2. **Grid bounding box**: Grid lines extend based on model element positions. Empty models use a default 10m extent.
+3. **Float-cast warning**: PyVista emits a harmless `Points is not a float type` warning on startup.
 
 ## Contact & Resources
 
@@ -537,3 +672,4 @@ from loguru import logger     # Logging
 2. Follow established architecture
 3. Add tests for new functionality
 4. Update this CLAUDE.md if architecture changes
+5. Document discoveries in `knowledge/LEARNED.md`

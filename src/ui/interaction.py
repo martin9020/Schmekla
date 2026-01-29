@@ -13,6 +13,8 @@ class InteractionMode(Enum):
     CREATE_BEAM = auto()    # Two-point creation
     CREATE_COLUMN = auto()  # One-point creation
     CREATE_PLATE = auto()   # Multi-point creation
+    CREATE_BOLT = auto()    # One-point creation (Origin) + Direction (optional, default X)
+    CREATE_WELD = auto()    # Two-part selection
     COPY = auto()           # Two-point copy: pick base point, pick destination
     MOVE = auto()           # Two-point move: pick base point, pick destination
 
@@ -78,6 +80,12 @@ class InteractionManager(QObject):
         elif mode == InteractionMode.CREATE_PLATE:
             self._state = InteractionState.WAITING_FOR_POINT_1
             self.prompt_changed.emit("Pick corner point 1" + self._get_snap_hint())
+        elif mode == InteractionMode.CREATE_BOLT:
+            self._state = InteractionState.WAITING_FOR_POINT_1
+            self.prompt_changed.emit("Pick bolt group origin" + self._get_snap_hint())
+        elif mode == InteractionMode.CREATE_WELD:
+            self._state = InteractionState.WAITING_FOR_POINT_1
+            self.prompt_changed.emit("Select main part")
         elif mode == InteractionMode.COPY:
             self._state = InteractionState.WAITING_FOR_POINT_1
             self._copy_base_point = None
@@ -127,6 +135,8 @@ class InteractionManager(QObject):
             self._handle_create_column(point, snap_type)
         elif self._mode == InteractionMode.CREATE_PLATE:
             self._handle_create_plate(point, snap_type)
+        elif self._mode == InteractionMode.CREATE_BOLT:
+            self._handle_create_bolt(point, snap_type)
         elif self._mode == InteractionMode.COPY:
             self._handle_copy(point, snap_type)
         elif self._mode == InteractionMode.MOVE:
@@ -189,18 +199,71 @@ class InteractionManager(QObject):
 
         count = len(self._points)
         if count < 4:
-            self._state = getattr(InteractionState, f"WAITING_FOR_POINT_{count+1}")
-            self.prompt_changed.emit(f"Pick corner point {count+1}{self._get_snap_hint()}{snap_info}")
+            self._state = getattr(InteractionState, f"WAITING_FOR_POINT_{count + 1}", InteractionState.WAITING_FOR_POINT_4)
+            self.prompt_changed.emit(f"Pick corner point {count + 1}{self._get_snap_hint()}{snap_info}")
         else:
-            # 4 points collected
+            # 4 points collected - create plate
             self.element_created.emit("PLATE", {
-                "points": list(self._points),
-                "thickness": 10.0,
+                "points": list(self._points), # Copy list
+                "profile": "PL10", # Default
                 "material": self.current_material_name
             })
+            
+            # Reset
             self._points.clear()
             self._state = InteractionState.WAITING_FOR_POINT_1
             self.prompt_changed.emit(f"Plate created{snap_info}. Pick corner point 1{self._get_snap_hint()}")
+
+    def _handle_create_bolt(self, point: Point3D, snap_type: str = ""):
+        snap_info = f" [Snapped to {snap_type}]" if snap_type else ""
+        
+        # Simple bolt creation: One click = Origin
+        # TODO: Add second click for direction
+        
+        self.element_created.emit("BOLT_GROUP", {
+            "origin": point,
+            "spacing_x": "100 100",
+            "spacing_y": "100",
+            "bolt_diameter": 20.0
+        })
+        
+        self.prompt_changed.emit(f"Bolt group created{snap_info}. Pick bolt group origin{self._get_snap_hint()}")
+
+    def on_selection_changed(self, selected_ids: List[UUID]):
+        """Handle selection changes from the model."""
+        if self._mode == InteractionMode.CREATE_WELD:
+            self._handle_create_weld_selection(selected_ids)
+            
+    def _handle_create_weld_selection(self, selected_ids: List[UUID]):
+        if not selected_ids:
+            return
+            
+        # We only care about the last selected item (single select logic for simplicity)
+        # But user might box select. Let's just take the first one.
+        selected_id = selected_ids[-1]
+        
+        if self._state == InteractionState.WAITING_FOR_POINT_1: # Waiting for Main Part
+            self._weld_main_part = selected_id
+            self._state = InteractionState.WAITING_FOR_POINT_2
+            self.prompt_changed.emit("Select secondary part")
+            
+        elif self._state == InteractionState.WAITING_FOR_POINT_2: # Waiting for Secondary Part
+            if selected_id == self._weld_main_part:
+                self.prompt_changed.emit("Secondary part cannot be same as main part. Select secondary part.")
+                return
+                
+            secondary_part = selected_id
+            
+            # Create Weld
+            self.element_created.emit("WELD", {
+                "main_part_id": self._weld_main_part,
+                "secondary_part_id": secondary_part,
+                "size_above": 6.0
+            })
+            
+            self._weld_main_part = None
+            self._state = InteractionState.WAITING_FOR_POINT_1
+            self.prompt_changed.emit("Weld created. Select main part")
 
     def _handle_copy(self, point: Point3D, snap_type: str = ""):
         """Handle two-point copy workflow: pick base point, then destination."""

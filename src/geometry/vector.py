@@ -241,7 +241,7 @@ class Vector3D:
             OCC.Core.gp.gp_Dir
         """
         try:
-            from OCC.Core.gp import gp_Dir
+            from OCP.gp import gp_Dir
             normalized = self.normalize()
             return gp_Dir(normalized.x, normalized.y, normalized.z)
         except ImportError:
@@ -255,7 +255,7 @@ class Vector3D:
             OCC.Core.gp.gp_Vec
         """
         try:
-            from OCC.Core.gp import gp_Vec
+            from OCP.gp import gp_Vec
             return gp_Vec(self.x, self.y, self.z)
         except ImportError:
             raise ImportError("OpenCascade (OCC) not available")

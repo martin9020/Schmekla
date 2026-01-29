@@ -27,6 +27,9 @@ from src.ui.interaction import InteractionManager, InteractionMode
 from src.core.beam import Beam
 from src.core.column import Column
 from src.core.plate import Plate
+from src.core.bolt import BoltGroup
+from src.core.weld import Weld
+from src.core.element import ElementType
 from src.core.profile import Profile, ProfileCatalog
 from src.core.material import Material, MaterialCatalog
 from src.geometry.point import Point3D
@@ -55,6 +58,9 @@ class MainWindow(QMainWindow):
         # Initialize Snap Manager
         from src.core.snap_manager import SnapManager
         self.snap_manager = SnapManager(self.model)
+
+        # Drawing list window
+        self.drawing_list_window = None
 
         # Initialize Interaction Manager with snap manager (already imported at module level)
         self.interaction_manager = InteractionManager(snap_manager=self.snap_manager)
@@ -180,6 +186,12 @@ class MainWindow(QMainWindow):
         modeling_menu.addAction(self._create_action(
             "Create Plate", self.create_plate, "P"
         ))
+        modeling_menu.addAction(self._create_action(
+            "Create Bolt Group", self.create_bolt_group
+        ))
+        modeling_menu.addAction(self._create_action(
+            "Create Weld", self.create_weld
+        ))
         modeling_menu.addSeparator()
         modeling_menu.addAction(self._create_action(
             "Create Grid...", self.create_grid, "G"
@@ -189,6 +201,10 @@ class MainWindow(QMainWindow):
         tools_menu = menubar.addMenu("&Tools")
         tools_menu.addAction(self._create_action(
             "Numbering Settings...", self.open_numbering_settings, "Ctrl+N"
+        ))
+        tools_menu.addSeparator()
+        tools_menu.addAction(self._create_action(
+            "Drawing List", self._show_drawing_list, "Ctrl+L"
         ))
         tools_menu.addSeparator()
         tools_menu.addAction(self._create_action(
@@ -239,6 +255,8 @@ class MainWindow(QMainWindow):
         modeling_toolbar.addAction(self._create_action("Beam", self.create_beam))
         modeling_toolbar.addAction(self._create_action("Column", self.create_column))
         modeling_toolbar.addAction(self._create_action("Plate", self.create_plate))
+        modeling_toolbar.addAction(self._create_action("Bolt", self.create_bolt_group))
+        modeling_toolbar.addAction(self._create_action("Weld", self.create_weld))
         modeling_toolbar.addSeparator()
         modeling_toolbar.addAction(self._create_action("Grid", self.create_grid))
         self.addToolBar(modeling_toolbar)
@@ -301,6 +319,20 @@ class MainWindow(QMainWindow):
         # ESC - Cancel current operation / Return to IDLE
         esc_shortcut = QShortcut(QKeySequence(Qt.Key_Escape), self)
         esc_shortcut.activated.connect(self._on_escape_pressed)
+        
+        # Ctrl+L - Drawing List (Tekla style)
+        drawing_list_shortcut = QShortcut(QKeySequence("Ctrl+L"), self)
+        drawing_list_shortcut.activated.connect(self._show_drawing_list)
+
+    def _show_drawing_list(self):
+        """Show drawing list window."""
+        if self.drawing_list_window is None:
+            from src.ui.windows.drawing_list_window import DrawingListWindow
+            self.drawing_list_window = DrawingListWindow(self.model, self)
+        
+        self.drawing_list_window.show()
+        self.drawing_list_window.raise_()
+        self.drawing_list_window.activateWindow()
 
     def _on_escape_pressed(self):
         """Handle ESC key - cancel current operation."""
@@ -645,6 +677,16 @@ class MainWindow(QMainWindow):
         if self.interaction_manager:
             self.interaction_manager.set_mode(InteractionMode.CREATE_PLATE)
 
+    def create_bolt_group(self):
+        """Enter bolt group creation mode."""
+        if self.interaction_manager:
+            self.interaction_manager.set_mode(InteractionMode.CREATE_BOLT)
+
+    def create_weld(self):
+        """Enter weld creation mode."""
+        if self.interaction_manager:
+            self.interaction_manager.set_mode(InteractionMode.CREATE_WELD)
+
     def copy_selected(self):
         """Enter copy mode for selected elements."""
         if not self.model.get_selected_ids():
@@ -798,6 +840,36 @@ class MainWindow(QMainWindow):
                     material=Material.from_name(params.get("material", "S355")),
                     name="PLATE"
                 )
+            elif element_type == "BOLT_GROUP":
+                new_element = BoltGroup(
+                    origin=params["origin"],
+                    spacing_x=params.get("spacing_x", "100 100"),
+                    spacing_y=params.get("spacing_y", "100"),
+                    bolt_diameter=params.get("bolt_diameter", 20.0)
+                )
+                new_element.name = "BOLT_GROUP"
+
+            elif element_type == "WELD":
+                # Resolve part IDs to elements for position calculation
+                main_part_id = params.get("main_part_id")
+                secondary_part_id = params.get("secondary_part_id")
+                
+                secondary_part = self.model.get_element(secondary_part_id)
+                
+                # Determine position (use secondary part center or fallback)
+                position = Point3D(0, 0, 0)
+                if secondary_part and hasattr(secondary_part, 'get_center_point'):
+                    position = secondary_part.get_center_point()
+                elif secondary_part and hasattr(secondary_part, 'start_point'):
+                    position = secondary_part.start_point
+                
+                new_element = Weld(
+                    main_part_id=main_part_id,
+                    secondary_part_id=secondary_part_id,
+                    position=position,
+                    size_above=params.get("size_above", 6.0)
+                )
+                new_element.name = "WELD"
 
             if new_element:
                 self.model.add_element(new_element)

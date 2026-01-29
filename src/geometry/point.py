@@ -202,7 +202,7 @@ class Point3D:
             OCC.Core.gp.gp_Pnt
         """
         try:
-            from OCC.Core.gp import gp_Pnt
+            from OCP.gp import gp_Pnt
             return gp_Pnt(self.x, self.y, self.z)
         except ImportError:
             raise ImportError("OpenCascade (OCC) not available")

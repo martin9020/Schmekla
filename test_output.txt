@@ -1,1 +1,102 @@
-Python was not found; run without arguments to install from the Microsoft Store, or disable this shortcut from Settings > Apps > Advanced app settings > App execution aliases.
+14:22:43 | INFO     | __main__:main:27 - Starting Schmekla v0.1.0
+14:22:43 | INFO     | src.utils.config:_load_env:126 - Loading environment from C:\Users\Daradudai\Schmekla-Test-Launch\.env
+14:22:45 | INFO     | src.core.model:__init__:70 - Created new StructuralModel: Untitled
+14:22:45 | INFO     | src.utils.config:_load_env:126 - Loading environment from C:\Users\Daradudai\Schmekla-Test-Launch\.env
+14:22:45 | INFO     | src.core.profile:load_catalog:359 - Loaded 31 profiles from C:\Users\Daradudai\Schmekla-Test-Launch\resources\profiles\uk_sections.json
+14:22:45 | INFO     | src.core.material:load_catalog:191 - Loaded 7 materials from C:\Users\Daradudai\Schmekla-Test-Launch\resources\materials\materials.json
+14:22:46 | INFO     | src.ui.viewport:_setup_ui:300 - Using SelectionQtInteractor (Qt-level mouse handling)
+C:\Users\Daradudai\Schmekla-Test-Launch\venv\Lib\site-packages\pyvista\core\utilities\points.py:79: UserWarning: Points is not a float type. This can cause issues when transforming or applying filters. Casting to ``np.float32``. Disable this by passing ``force_float=False``.
+  warnings.warn(
+14:22:46 | INFO     | src.ui.viewport:_enable_selection_picking:577 - Selection picking enabled
+14:22:46 | INFO     | src.ui.viewport:_install_selection_interactor:1107 - Selection interactor installed - Left: select/box, Ctrl+Right: rotate
+14:22:46 | INFO     | src.ui.viewport:_setup_ui:334 - PyVista viewport created successfully
+14:22:46 | INFO     | src.ui.viewport:__init__:285 - Viewport3D initialized
+14:22:46 | INFO     | src.ui.main_window:_setup_central_widget:96 - 3D Viewport created with PyVista
+14:22:46 | INFO     | src.ui.main_window:__init__:87 - MainWindow initialized
+14:22:46 | INFO     | __main__:main:55 - Application window created successfully
+14:22:50 | INFO     | src.ui.interaction:set_mode:68 - Interaction Mode: CREATE_BEAM
+14:22:50 | INFO     | src.ui.viewport:set_interaction_mode:532 - Viewport mode changed to: CREATE_BEAM
+14:22:51 | INFO     | src.ui.viewport:_on_viewport_click:715 - Click position received: (24206.009610399655, 35350.28399879497, 21936.526713832925)
+14:22:51 | INFO     | src.ui.viewport:_on_viewport_click:741 - Final pick point: (24206.01, 35350.28, 0.00)
+14:22:51 | INFO     | src.ui.viewport:_on_viewport_click:715 - Click position received: (29604.698332294636, 26619.624835403032, 25268.497155329882)
+14:22:51 | INFO     | src.ui.viewport:_on_viewport_click:741 - Final pick point: (29604.70, 26619.62, 0.00)
+14:22:51 | ERROR    | src.core.element:_tessellate:295 - Tessellation failed: Triangulation_s(): incompatible function arguments. The following argument types are supported:
+    1. (theFace: OCP.OCP.TopoDS.TopoDS_Face, theLocation: OCP.OCP.TopLoc.TopLoc_Location, theMeshPurpose: int = 0) -> OCP.OCP.Poly.Poly_Triangulation
+
+Invoked with: <OCP.OCP.TopoDS.TopoDS_Shape object at 0x000001D272B4A4B0>, <OCP.OCP.TopLoc.TopLoc_Location object at 0x000001D272B4B470>
+14:22:51 | INFO     | src.ui.main_window:_invalidate_snap_cache:374 - Snap manager cache invalidated (model changed)
+14:22:51 | INFO     | src.ui.main_window:_on_element_created_request:878 - Interactive creation: BEAM
+14:22:51 | ERROR    | src.core.element:_tessellate:295 - Tessellation failed: Triangulation_s(): incompatible function arguments. The following argument types are supported:
+    1. (theFace: OCP.OCP.TopoDS.TopoDS_Face, theLocation: OCP.OCP.TopLoc.TopLoc_Location, theMeshPurpose: int = 0) -> OCP.OCP.Poly.Poly_Triangulation
+
+Invoked with: <OCP.OCP.TopoDS.TopoDS_Shape object at 0x000001D272B5D5B0>, <OCP.OCP.TopLoc.TopLoc_Location object at 0x000001D272B5CEF0>
+14:22:53 | INFO     | src.ui.interaction:set_mode:68 - Interaction Mode: CREATE_COLUMN
+14:22:53 | INFO     | src.ui.viewport:set_interaction_mode:532 - Viewport mode changed to: CREATE_COLUMN
+14:22:53 | INFO     | src.ui.viewport:_on_viewport_click:715 - Click position received: (48159.33780679042, 40368.49910364085, 46854.36333912035)
+14:22:53 | INFO     | src.ui.viewport:_on_viewport_click:741 - Final pick point: (48159.34, 40368.50, 0.00)
+14:22:53 | ERROR    | src.core.element:_tessellate:295 - Tessellation failed: Triangulation_s(): incompatible function arguments. The following argument types are supported:
+    1. (theFace: OCP.OCP.TopoDS.TopoDS_Face, theLocation: OCP.OCP.TopLoc.TopLoc_Location, theMeshPurpose: int = 0) -> OCP.OCP.Poly.Poly_Triangulation
+
+Invoked with: <OCP.OCP.TopoDS.TopoDS_Shape object at 0x000001D272B5EC30>, <OCP.OCP.TopLoc.TopLoc_Location object at 0x000001D272ACE330>
+14:22:53 | INFO     | src.ui.main_window:_invalidate_snap_cache:374 - Snap manager cache invalidated (model changed)
+14:22:53 | INFO     | src.ui.main_window:_on_element_created_request:878 - Interactive creation: COLUMN
+14:22:53 | ERROR    | src.core.element:_tessellate:295 - Tessellation failed: Triangulation_s(): incompatible function arguments. The following argument types are supported:
+    1. (theFace: OCP.OCP.TopoDS.TopoDS_Face, theLocation: OCP.OCP.TopLoc.TopLoc_Location, theMeshPurpose: int = 0) -> OCP.OCP.Poly.Poly_Triangulation
+
+Invoked with: <OCP.OCP.TopoDS.TopoDS_Shape object at 0x000001D272B5FBB0>, <OCP.OCP.TopLoc.TopLoc_Location object at 0x000001D272B6D470>
+14:22:53 | ERROR    | src.core.element:_tessellate:295 - Tessellation failed: Triangulation_s(): incompatible function arguments. The following argument types are supported:
+    1. (theFace: OCP.OCP.TopoDS.TopoDS_Face, theLocation: OCP.OCP.TopLoc.TopLoc_Location, theMeshPurpose: int = 0) -> OCP.OCP.Poly.Poly_Triangulation
+
+Invoked with: <OCP.OCP.TopoDS.TopoDS_Shape object at 0x000001D272B5D8F0>, <OCP.OCP.TopLoc.TopLoc_Location object at 0x000001D272B2B630>
+14:22:55 | INFO     | src.ui.interaction:set_mode:68 - Interaction Mode: CREATE_PLATE
+14:22:55 | INFO     | src.ui.viewport:set_interaction_mode:532 - Viewport mode changed to: CREATE_PLATE
+14:22:56 | INFO     | src.ui.viewport:_on_viewport_click:715 - Click position received: (67567.87769558406, 47630.22530165966, 55972.7216168515)
+14:22:56 | INFO     | src.ui.viewport:_on_viewport_click:741 - Final pick point: (67567.88, 47630.23, 0.00)
+14:22:56 | INFO     | src.ui.viewport:_on_viewport_click:715 - Click position received: (57440.465042063835, 54158.25221512743, 58908.86295177001)
+14:22:56 | INFO     | src.ui.viewport:_on_viewport_click:741 - Final pick point: (57440.47, 54158.25, 0.00)
+14:22:56 | INFO     | src.ui.viewport:_on_viewport_click:715 - Click position received: (58290.069183672575, 58227.18335125761, 54066.37417069496)
+14:22:56 | INFO     | src.ui.viewport:_on_viewport_click:741 - Final pick point: (58290.07, 58227.18, 0.00)
+14:22:57 | INFO     | src.ui.viewport:_on_viewport_click:715 - Click position received: (65431.369214427104, 52337.87411847298, 52833.740662784934)
+14:22:57 | INFO     | src.ui.viewport:_on_viewport_click:741 - Final pick point: (65431.37, 52337.87, 0.00)
+14:22:57 | ERROR    | src.core.element:_tessellate:295 - Tessellation failed: Triangulation_s(): incompatible function arguments. The following argument types are supported:
+    1. (theFace: OCP.OCP.TopoDS.TopoDS_Face, theLocation: OCP.OCP.TopLoc.TopLoc_Location, theMeshPurpose: int = 0) -> OCP.OCP.Poly.Poly_Triangulation
+
+Invoked with: <OCP.OCP.TopoDS.TopoDS_Shape object at 0x000001D272B2A670>, <OCP.OCP.TopLoc.TopLoc_Location object at 0x000001D272B28BF0>
+14:22:57 | INFO     | src.ui.main_window:_invalidate_snap_cache:374 - Snap manager cache invalidated (model changed)
+14:22:57 | INFO     | src.ui.main_window:_on_element_created_request:878 - Interactive creation: PLATE
+14:22:57 | ERROR    | src.core.element:_tessellate:295 - Tessellation failed: Triangulation_s(): incompatible function arguments. The following argument types are supported:
+    1. (theFace: OCP.OCP.TopoDS.TopoDS_Face, theLocation: OCP.OCP.TopLoc.TopLoc_Location, theMeshPurpose: int = 0) -> OCP.OCP.Poly.Poly_Triangulation
+
+Invoked with: <OCP.OCP.TopoDS.TopoDS_Shape object at 0x000001D272ACFF70>, <OCP.OCP.TopLoc.TopLoc_Location object at 0x000001D272ACF5F0>
+14:22:57 | ERROR    | src.core.element:_tessellate:295 - Tessellation failed: Triangulation_s(): incompatible function arguments. The following argument types are supported:
+    1. (theFace: OCP.OCP.TopoDS.TopoDS_Face, theLocation: OCP.OCP.TopLoc.TopLoc_Location, theMeshPurpose: int = 0) -> OCP.OCP.Poly.Poly_Triangulation
+
+Invoked with: <OCP.OCP.TopoDS.TopoDS_Shape object at 0x000001D269224530>, <OCP.OCP.TopLoc.TopLoc_Location object at 0x000001D272B6F8B0>
+14:22:57 | ERROR    | src.core.element:_tessellate:295 - Tessellation failed: Triangulation_s(): incompatible function arguments. The following argument types are supported:
+    1. (theFace: OCP.OCP.TopoDS.TopoDS_Face, theLocation: OCP.OCP.TopLoc.TopLoc_Location, theMeshPurpose: int = 0) -> OCP.OCP.Poly.Poly_Triangulation
+
+Invoked with: <OCP.OCP.TopoDS.TopoDS_Shape object at 0x000001D272B5F1F0>, <OCP.OCP.TopLoc.TopLoc_Location object at 0x000001D272B5EC30>
+14:22:59 | INFO     | src.ui.interaction:set_mode:68 - Interaction Mode: CREATE_BOLT
+14:22:59 | INFO     | src.ui.viewport:set_interaction_mode:532 - Viewport mode changed to: CREATE_BOLT
+14:22:59 | INFO     | src.ui.viewport:_on_viewport_click:715 - Click position received: (92899.09732235198, 87431.85868898765, 46656.78539097313)
+14:22:59 | INFO     | src.ui.viewport:_on_viewport_click:741 - Final pick point: (92899.10, 87431.86, 0.00)
+14:22:59 | ERROR    | src.ui.main_window:_on_element_created_request:883 - Failed to create element interactively: property 'element_type' of 'BoltGroup' object has no setter
+14:23:01 | INFO     | src.ui.interaction:set_mode:68 - Interaction Mode: CREATE_WELD
+14:23:01 | INFO     | src.ui.viewport:set_interaction_mode:532 - Viewport mode changed to: CREATE_WELD
+14:23:01 | INFO     | src.ui.viewport:_enable_selection_picking:577 - Selection picking enabled
+14:23:02 | INFO     | src.ui.viewport:_on_selection_pick:591 - Selection pick at: [63346.12724106 54777.54364472     0.        ]
+14:23:02 | INFO     | src.ui.viewport:_on_selection_pick:639 - Element selected: 7bac7f63-e5cb-414c-a02e-7a38c21b08d8
+14:23:02 | INFO     | src.ui.viewport:_on_viewport_click:715 - Click position received: (63346.12724105692, 54777.54364471615, 0.0)
+14:23:02 | INFO     | src.ui.viewport:_on_viewport_click:741 - Final pick point: (63346.13, 54777.54, 0.00)
+14:23:04 | INFO     | src.ui.viewport:_on_selection_pick:591 - Selection pick at: [27534.45988721 30328.52297564  -264.88234297]
+14:23:04 | INFO     | src.ui.viewport:_on_selection_pick:639 - Element selected: 2281cd57-39a2-493c-9833-37de94049cc9
+14:23:04 | INFO     | src.ui.viewport:_on_viewport_click:715 - Click position received: (27534.459887211175, 30328.522975644686, -264.88234297085)
+14:23:04 | INFO     | src.ui.viewport:_on_viewport_click:741 - Final pick point: (27534.46, 30328.52, 0.00)
+14:23:06 | INFO     | src.ui.viewport:_on_selection_pick:591 - Selection pick at: [ 6.14278660e+04  5.46452876e+04 -7.27595761e-12]
+14:23:06 | INFO     | src.ui.viewport:_on_selection_pick:639 - Element selected: 7bac7f63-e5cb-414c-a02e-7a38c21b08d8
+14:23:06 | INFO     | src.ui.viewport:_on_viewport_click:715 - Click position received: (61427.86595783067, 54645.28763536318, -7.275957614183426e-12)
+14:23:06 | INFO     | src.ui.viewport:_on_viewport_click:741 - Final pick point: (61427.87, 54645.29, 0.00)
+QWidgetWindow(0x1d2627f6ea0, name="Viewport3DClassWindow") must be a top level window.
+14:23:10 | INFO     | src.ui.interaction:set_mode:68 - Interaction Mode: IDLE
+14:23:10 | INFO     | src.ui.viewport:set_interaction_mode:532 - Viewport mode changed to: IDLE
+14:23:10 | INFO     | src.ui.main_window:_on_escape_pressed:341 - ESC pressed - returned to IDLE mode

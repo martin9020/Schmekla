@@ -30,6 +30,10 @@ class ElementType(Enum):
     BRACE = "brace"
     PURLIN = "purlin"
     GIRT = "girt"
+    GRID = "grid"
+    LEVEL = "level"
+    BOLT_GROUP = "bolt_group"
+    WELD = "weld"
 
 
 class PositionOnPlane(Enum):
@@ -94,6 +98,10 @@ class StructuralElement(ABC):
         self._name: str = ""
         self._material: Optional["Material"] = None
         self._profile: Optional["Profile"] = None
+        
+        # Assembly Hierarchy
+        self.assembly_id: Optional[UUID] = None # ID of the Assembly this part belongs to
+        self.main_part_of_assembly: bool = False # Is this the main part?
 
         # Geometry caching
         self._solid: Optional[Any] = None  # OpenCascade TopoDS_Shape
@@ -231,11 +239,11 @@ class StructuralElement(ABC):
         """
         try:
             import pyvista as pv
-            from OCC.Core.BRepMesh import BRepMesh_IncrementalMesh
-            from OCC.Core.TopExp import TopExp_Explorer
-            from OCC.Core.TopAbs import TopAbs_FACE
-            from OCC.Core.BRep import BRep_Tool
-            from OCC.Core.TopLoc import TopLoc_Location
+            from OCP.BRepMesh import BRepMesh_IncrementalMesh
+            from OCP.TopExp import TopExp_Explorer
+            from OCP.TopAbs import TopAbs_FACE
+            from OCP.BRep import BRep_Tool
+            from OCP.TopLoc import TopLoc_Location
 
             # Mesh the shape
             mesh_algo = BRepMesh_IncrementalMesh(solid, 1.0, False, 0.5, True)
@@ -246,11 +254,13 @@ class StructuralElement(ABC):
             faces = []
             vertex_offset = 0
 
+            from OCP.TopoDS import TopoDS
+
             explorer = TopExp_Explorer(solid, TopAbs_FACE)
             while explorer.More():
-                face = explorer.Current()
+                face = TopoDS.Face_s(explorer.Current())
                 location = TopLoc_Location()
-                triangulation = BRep_Tool.Triangulation(face, location)
+                triangulation = BRep_Tool.Triangulation_s(face, location)
 
                 if triangulation is not None:
                     # Get vertices
@@ -372,12 +382,12 @@ class StructuralElement(ABC):
             return (Point3D.origin(), Point3D.origin())
 
         try:
-            from OCC.Core.Bnd import Bnd_Box
-            from OCC.Core.BRepBndLib import brepbndlib_Add
+            from OCP.Bnd import Bnd_Box
+            from OCP.BRepBndLib import BRepBndLib
             from src.geometry.point import Point3D
 
             bbox = Bnd_Box()
-            brepbndlib_Add(solid, bbox)
+            BRepBndLib.Add_s(solid, bbox)
 
             xmin, ymin, zmin, xmax, ymax, zmax = bbox.Get()
             return (
@@ -481,3 +491,18 @@ class StructuralElement(ABC):
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(id={self._id}, name='{self._name}')"
+
+
+@dataclass
+class ConnectionComponent(StructuralElement):
+    main_part_id: Optional[UUID] = None
+    secondary_part_id: Optional[UUID] = None
+
+    def on_added(self, model: "StructuralModel"):
+        if self.main_part_id and self.secondary_part_id:
+            main = model.get_element(self.main_part_id)
+            secondary = model.get_element(self.secondary_part_id)
+            if main and secondary:
+                secondary.assembly_id = main.id
+                main.main_part_of_assembly = True
+                secondary.main_part_of_assembly = False

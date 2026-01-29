@@ -36,6 +36,7 @@ class IFCExporter:
         self.site = None
         self.building = None
         self.storey = None
+        self.storeys = {}  # Map elevation/id to IfcBuildingStorey
         self.body_context = None
 
     def export(self, file_path: str, schema: str = "IFC2X3"):
@@ -122,17 +123,40 @@ class IFCExporter:
             products=[self.building]
         )
 
-        # Create default storey
-        self.storey = ifcopenshell.api.run(
-            "root.create_entity", self.ifc,
-            ifc_class="IfcBuildingStorey",
-            name="Ground Floor"
-        )
-        ifcopenshell.api.run(
-            "aggregate.assign_object", self.ifc,
-            relating_object=self.building,
-            products=[self.storey]
-        )
+        # Create storeys from levels
+        levels = self.model.get_levels()
+        if not levels:
+            # Create default storey if no levels
+            default_storey = ifcopenshell.api.run(
+                "root.create_entity", self.ifc,
+                ifc_class="IfcBuildingStorey",
+                name="Ground Floor",
+                elevation=0.0
+            )
+            ifcopenshell.api.run(
+                "aggregate.assign_object", self.ifc,
+                relating_object=self.building,
+                products=[default_storey]
+            )
+            self.storey = default_storey
+            self.storeys[0.0] = default_storey
+        else:
+            for level in levels:
+                storey = ifcopenshell.api.run(
+                    "root.create_entity", self.ifc,
+                    ifc_class="IfcBuildingStorey",
+                    name=level.name,
+                    elevation=level.elevation
+                )
+                ifcopenshell.api.run(
+                    "aggregate.assign_object", self.ifc,
+                    relating_object=self.building,
+                    products=[storey]
+                )
+                self.storeys[level.elevation] = storey
+                # Set self.storey to the first one as fallback
+                if self.storey is None:
+                    self.storey = storey
 
         logger.debug("Created IFC project structure")
 
@@ -211,21 +235,45 @@ class IFCExporter:
         Args:
             element: Element to export
         """
+        # Skip Level elements as they are handled in project structure
+        if element.element_type == ElementType.LEVEL:
+            return
+
         import ifcopenshell.api
 
         # Get IFC entity from element
         ifc_entity = element.to_ifc(self)
 
         if ifc_entity is None:
-            logger.warning(f"No IFC entity created for {element.id}")
+            # Grids might return None if import failed, or if they are just virtual
+            if element.element_type != ElementType.GRID:
+                logger.warning(f"No IFC entity created for {element.id}")
             return
 
         self._element_map[element.id] = ifc_entity
 
+        # Find appropriate storey
+        target_storey = self.storey # Default
+        z_level = 0.0
+        
+        if hasattr(element, 'start_point'):
+            z_level = element.start_point.z
+        elif hasattr(element, 'origin'):
+            z_level = element.origin.z
+            
+        # Find closest storey below or at z_level
+        # self.storeys is map {elevation: entity}
+        best_elevation = -float('inf')
+        for elevation, storey in self.storeys.items():
+            if elevation <= z_level + 100.0: # Tolerance
+                if elevation > best_elevation:
+                    best_elevation = elevation
+                    target_storey = storey
+        
         # Assign to storey
         ifcopenshell.api.run(
             "spatial.assign_container", self.ifc,
-            relating_structure=self.storey,
+            relating_structure=target_storey,
             products=[ifc_entity]
         )
 

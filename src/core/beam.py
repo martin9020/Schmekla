@@ -202,7 +202,7 @@ class Beam(StructuralElement):
         """
         try:
             import cadquery as cq
-            from OCC.Core.gp import gp_Pnt, gp_Dir, gp_Ax2
+            from OCP.gp import gp_Pnt, gp_Dir, gp_Ax2
 
             logger.debug(f"Generating solid for beam {self._id}")
 

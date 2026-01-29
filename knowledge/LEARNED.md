@@ -519,4 +519,138 @@ for elem_id, actor in self._actors.items():
 
 ---
 
-*Last updated: 2026-01-27*
+## Connection Elements Implementation (2026-01-29)
+
+### BoltGroup Integration
+- **Interactive Creation**: One-click origin selection.
+- **Visualization**: Rendered as cylinders (grey).
+- **Default Params**: Spacing 100x100mm, Diameter 20mm.
+
+### Weld Integration
+- **Assembly Hierarchy**: Defines logical connection between Main and Secondary parts.
+- **Two-Step Selection**:
+  1. Pick Main Part (Status: "Pick main part of weld...")
+  2. Pick Secondary Part (Status: "Pick secondary part...")
+- **Visualization**: Rendered as magenta sphere at connection point (usually secondary part center).
+
+### Dependency Management Improvements
+- **Stepped Installation**: `Schmekla.bat` now installs dependencies in 4 phases (Core, UI, Geometry, Finalize) for better feedback.
+- **Constraint Usage**: Uses `--constraint requirements.txt` during individual steps to respect version pinning.
+
+---
+
+## OCP Import Convention (cadquery-ocp) - CRITICAL (discovered 2026-01-29)
+
+### OCC.Core.* Does NOT Exist
+
+The `cadquery-ocp` package provides OpenCascade bindings under the `OCP` namespace, **NOT** `OCC.Core`:
+
+```python
+# CORRECT:
+from OCP.gp import gp_Pnt, gp_Dir, gp_Ax2
+from OCP.BRepMesh import BRepMesh_IncrementalMesh
+from OCP.TopExp import TopExp_Explorer
+from OCP.TopAbs import TopAbs_FACE
+from OCP.BRep import BRep_Tool
+from OCP.TopLoc import TopLoc_Location
+from OCP.Bnd import Bnd_Box
+from OCP.BRepBndLib import BRepBndLib
+from OCP.TopoDS import TopoDS
+from OCP.BRepOffsetAPI import BRepOffsetAPI_MakePipe
+from OCP.GC import GC_MakeArcOfCircle
+from OCP.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire
+
+# WRONG (old pythonocc-core convention):
+from OCC.Core.gp import gp_Pnt  # ModuleNotFoundError!
+```
+
+### Static Methods Use `_s` Suffix
+
+All static methods on OCP types have a `_s` suffix:
+
+```python
+# CORRECT:
+BRepBndLib.Add_s(solid, bbox)
+BRep_Tool.Triangulation_s(face, location)
+TopoDS.Face_s(shape)  # Downcast TopoDS_Shape -> TopoDS_Face
+
+# WRONG:
+BRepBndLib.Add(solid, bbox)        # AttributeError
+BRep_Tool.Triangulation(face, loc) # AttributeError
+```
+
+### TopoDS_Shape Downcasting Required
+
+`TopExp_Explorer.Current()` returns `TopoDS_Shape`, not the specific subtype. Must downcast:
+
+```python
+from OCP.TopoDS import TopoDS
+
+explorer = TopExp_Explorer(solid, TopAbs_FACE)
+while explorer.More():
+    face = TopoDS.Face_s(explorer.Current())  # Downcast to TopoDS_Face
+    # Now BRep_Tool.Triangulation_s(face, location) works
+    explorer.Next()
+```
+
+### Files Fixed in This Session (2026-01-29)
+- `src/core/beam.py` - OCC.Core.gp → OCP.gp
+- `src/core/element.py` - All OCC imports → OCP, brepbndlib_Add → BRepBndLib.Add_s, TopoDS downcast
+- `src/core/curved_beam.py` - 2 locations OCC → OCP
+- `src/geometry/point.py` - OCC.Core.gp → OCP.gp
+- `src/geometry/vector.py` - 2 locations OCC.Core.gp → OCP.gp
+
+---
+
+## StructuralModel.get_bounding_box() (added 2026-01-29)
+
+Model-level bounding box was missing. Added to `src/core/model.py`.
+- Iterates all elements, calls each element's `get_bounding_box()`
+- Falls back to `start_point`/`end_point`/`base_point` when OCP bbox returns origin
+- Returns `(Point3D(10000,10000,10000))` default for empty models
+- Used by `viewport.py:_draw_structural_grids()` to determine grid line extent
+
+---
+
+## BoltGroup/Weld element_type Property (fixed 2026-01-29)
+
+### The Problem
+`StructuralElement.element_type` is an abstract read-only `@property`. Both `BoltGroup` and `Weld` implement it correctly as properties returning their type. But code in `main_window.py` and `weld.py.__post_init__` tried to **set** `element_type` which raised `AttributeError: property has no setter`.
+
+### The Fix
+- Removed `new_element.element_type = ElementType.BOLT_GROUP` from `main_window.py:851`
+- Removed `new_element.element_type = ElementType.WELD` from `main_window.py:874`
+- Removed `self.element_type = ElementType.WELD` from `weld.py:42`
+- The property already returns the correct type — no setter needed.
+
+---
+
+## Python 3.12 Compatibility (2026-01-29)
+
+- System has Python 3.12.6, NOT 3.11
+- `Schmekla.bat` updated: `py -3.11` → `py -3.12`
+- All 83 packages from requirements.txt install successfully on Python 3.12
+- No runtime compatibility issues found with Python 3.12
+
+---
+
+## Schmekla.bat Syntax (2026-01-29)
+
+### Line Break Bug
+When removing `--disable-pip-version-check` from pip commands, the line breaks between
+pip commands and `if errorlevel 1` checks got lost, producing `requirements.txtif`.
+Always ensure pip commands and error checks are on **separate lines**:
+
+```batch
+"%VENV_DIR%\Scripts\python.exe" -m pip install numpy requests loguru --constraint requirements.txt
+if errorlevel 1 goto :error
+```
+
+NOT on the same line:
+```batch
+"%VENV_DIR%\Scripts\python.exe" -m pip install ... --constraint requirements.txtif errorlevel 1 goto :error
+```
+
+---
+
+*Last updated: 2026-01-29*

@@ -1,0 +1,102 @@
+[Schmekla] Checking environment...
+[Schmekla] Using existing local virtual environment.
+[Schmekla] Starting dependency check...
+[Schmekla] [1/4] Installing Core Utilities (numpy, requests, loguru)...
+ERROR: Could not open requirements file: [Errno 2] No such file or directory: 'requirements.txtif'
+[Schmekla] [2/4] Installing UI Framework (PySide6, qtpy)...
+ERROR: Could not open requirements file: [Errno 2] No such file or directory: 'requirements.txtif'
+[Schmekla] [3/4] Installing Geometry Engine (CadQuery, VTK, PyVista)...
+ERROR: Could not open requirements file: [Errno 2] No such file or directory: 'requirements.txtif'
+[Schmekla] [4/4] Finalizing and verifying all dependencies...
+ERROR: Invalid requirement: ':error': Expected package name at the start of dependency specifier
+    :error
+    ^
+[Schmekla] Starting application...
+------------------------------------------
+12:49:56 | INFO     | __main__:main:27 - Starting Schmekla v0.1.0
+12:49:56 | INFO     | src.utils.config:_load_env:126 - Loading environment from C:\Users\Daradudai\Schmekla-Test-Launch\.env
+12:49:58 | INFO     | src.core.model:__init__:70 - Created new StructuralModel: Untitled
+12:49:58 | INFO     | src.utils.config:_load_env:126 - Loading environment from C:\Users\Daradudai\Schmekla-Test-Launch\.env
+12:49:58 | INFO     | src.core.profile:load_catalog:359 - Loaded 31 profiles from C:\Users\Daradudai\Schmekla-Test-Launch\resources\profiles\uk_sections.json
+12:49:58 | INFO     | src.core.material:load_catalog:191 - Loaded 7 materials from C:\Users\Daradudai\Schmekla-Test-Launch\resources\materials\materials.json
+12:49:59 | INFO     | src.ui.viewport:_setup_ui:300 - Using SelectionQtInteractor (Qt-level mouse handling)
+C:\Users\Daradudai\Schmekla-Test-Launch\venv\Lib\site-packages\pyvista\core\utilities\points.py:79: UserWarning: Pointsis not a float type. This can cause issues when transforming or applying filters. Casting to ``np.float32``. Disable this by passing ``force_float=False``.
+  warnings.warn(
+12:49:59 | INFO     | src.ui.viewport:_enable_selection_picking:577 - Selection picking enabled
+12:49:59 | INFO     | src.ui.viewport:_install_selection_interactor:1107 - Selection interactor installed - Left: select/box, Ctrl+Right: rotate
+12:49:59 | INFO     | src.ui.viewport:_setup_ui:334 - PyVista viewport created successfully
+12:49:59 | INFO     | src.ui.viewport:__init__:285 - Viewport3D initialized
+12:49:59 | INFO     | src.ui.main_window:_setup_central_widget:96 - 3D Viewport created with PyVista
+12:49:59 | INFO     | src.ui.main_window:__init__:87 - MainWindow initialized
+12:49:59 | INFO     | __main__:main:55 - Application window created successfully
+QWidgetWindow(0x2f2c1defaa0, name="Viewport3DClassWindow") must be a top level window.
+12:50:03 | INFO     | src.ui.viewport:_do_element_pick:1200 - Clicked empty space - clearing selection
+12:50:05 | INFO     | src.ui.viewport:_do_element_pick:1273 - Clicked non-element - clearing selection
+12:50:09 | INFO     | src.ui.viewport:_do_element_pick:1200 - Clicked empty space - clearing selection
+12:50:11 | INFO     | src.ui.interaction:set_mode:68 - Interaction Mode: CREATE_WELD
+12:50:11 | INFO     | src.ui.viewport:set_interaction_mode:532 - Viewport mode changed to: CREATE_WELD
+12:50:11 | INFO     | src.ui.interaction:set_mode:68 - Interaction Mode: CREATE_BOLT
+12:50:11 | INFO     | src.ui.viewport:set_interaction_mode:532 - Viewport mode changed to: CREATE_BOLT
+12:50:15 | INFO     | src.ui.interaction:set_mode:68 - Interaction Mode: CREATE_BEAM
+12:50:15 | INFO     | src.ui.viewport:set_interaction_mode:532 - Viewport mode changed to: CREATE_BEAM
+12:50:16 | INFO     | src.ui.viewport:_on_viewport_click:715 - Click position received: (29197.81210722455, 27947.06296935776, 24347.945246445444)
+12:50:16 | INFO     | src.ui.viewport:_on_viewport_click:741 - Final pick point: (29197.81, 27947.06, 0.00)
+12:50:16 | INFO     | src.ui.viewport:_on_viewport_click:715 - Click position received: (20691.30974950062, 33868.4158466099, 26933.09472691722)
+12:50:16 | INFO     | src.ui.viewport:_on_viewport_click:741 - Final pick point: (20691.31, 33868.42, 0.00)
+12:50:16 | ERROR    | src.core.beam:generate_solid:250 - CadQuery/OCC not available: No module named 'OCC'
+12:50:16 | WARNING  | src.core.element:_tessellate:292 - Cannot tessellate: No module named 'OCC'
+12:50:16 | INFO     | src.ui.main_window:_invalidate_snap_cache:374 - Snap manager cache invalidated (model changed)
+12:50:16 | INFO     | src.ui.main_window:_on_element_created_request:878 - Interactive creation: BEAM
+12:50:16 | WARNING  | src.core.element:_tessellate:292 - Cannot tessellate: No module named 'OCC'
+12:50:16 | ERROR    | src.core.element:get_bounding_box:396 - Failed to get bounding box: No module named 'OCC'
+12:50:21 | INFO     | src.ui.viewport:_on_viewport_click:715 - Click position received: (46332.62570642172, 46247.06141002528, 24568.035212007388)
+12:50:21 | INFO     | src.ui.viewport:_on_viewport_click:741 - Final pick point: (46332.63, 46247.06, 0.00)
+12:50:22 | INFO     | src.ui.viewport:_on_viewport_click:715 - Click position received: (42551.62153122873, 42466.05723483229, 32130.04356239337)
+12:50:22 | INFO     | src.ui.viewport:_on_viewport_click:741 - Final pick point: (42551.62, 42466.06, 0.00)
+12:50:22 | ERROR    | src.core.beam:generate_solid:250 - CadQuery/OCC not available: No module named 'OCC'
+12:50:22 | WARNING  | src.core.element:_tessellate:292 - Cannot tessellate: No module named 'OCC'
+12:50:22 | INFO     | src.ui.main_window:_invalidate_snap_cache:374 - Snap manager cache invalidated (model changed)
+12:50:22 | INFO     | src.ui.main_window:_on_element_created_request:878 - Interactive creation: BEAM
+12:50:22 | WARNING  | src.core.element:_tessellate:292 - Cannot tessellate: No module named 'OCC'
+12:50:22 | ERROR    | src.core.element:get_bounding_box:396 - Failed to get bounding box: No module named 'OCC'
+12:50:22 | WARNING  | src.core.element:_tessellate:292 - Cannot tessellate: No module named 'OCC'
+12:50:22 | ERROR    | src.core.element:get_bounding_box:396 - Failed to get bounding box: No module named 'OCC'
+12:50:24 | INFO     | src.ui.interaction:set_mode:68 - Interaction Mode: CREATE_WELD
+12:50:24 | INFO     | src.ui.viewport:set_interaction_mode:532 - Viewport mode changed to: CREATE_WELD
+12:50:24 | INFO     | src.ui.viewport:_enable_selection_picking:577 - Selection picking enabled
+12:50:25 | INFO     | src.ui.viewport:_on_selection_pick:591 - Selection pick at: [23155.12176356 32590.93932074  -374.82292385]
+12:50:25 | INFO     | src.ui.viewport:_on_selection_pick:639 - Element selected: b7f0aaa9-7bfe-438f-8345-7fde7c45fc1d
+12:50:25 | INFO     | src.ui.viewport:_on_viewport_click:715 - Click position received: (23155.121763558833, 32590.939320735702, -374.82292385373876)
+12:50:25 | INFO     | src.ui.viewport:_on_viewport_click:741 - Final pick point: (23155.12, 32590.94, 0.00)
+12:50:26 | INFO     | src.ui.viewport:_on_selection_pick:591 - Selection pick at: [43942.04316335 43899.26191335   146.90883354]
+12:50:26 | INFO     | src.ui.viewport:_on_selection_pick:639 - Element selected: 1f350a5c-9888-404e-85ac-e79c17812b66
+12:50:26 | INFO     | src.ui.viewport:_on_viewport_click:715 - Click position received: (43942.043163345545, 43899.26191334559, 146.90883353990648)
+12:50:26 | INFO     | src.ui.viewport:_on_viewport_click:741 - Final pick point: (43942.04, 43899.26, 0.00)
+12:50:31 | INFO     | src.ui.main_window:_invalidate_snap_cache:374 - Snap manager cache invalidated (grid points updated)
+12:50:31 | WARNING  | src.core.element:_tessellate:292 - Cannot tessellate: No module named 'OCC'
+12:50:31 | ERROR    | src.core.element:get_bounding_box:396 - Failed to get bounding box: No module named 'OCC'
+12:50:31 | WARNING  | src.core.element:_tessellate:292 - Cannot tessellate: No module named 'OCC'
+12:50:31 | ERROR    | src.core.element:get_bounding_box:396 - Failed to get bounding box: No module named 'OCC'
+Traceback (most recent call last):
+  File "C:\Users\Daradudai\Schmekla-Test-Launch\src\ui\main_window.py", line 730, in create_grid
+    self.viewport.update_display()
+  File "C:\Users\Daradudai\Schmekla-Test-Launch\src\ui\viewport.py", line 820, in update_display
+    self._draw_structural_grids()
+  File "C:\Users\Daradudai\Schmekla-Test-Launch\src\ui\viewport.py", line 1013, in _draw_structural_grids
+    min_pt, max_pt = self.model.get_bounding_box()
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'StructuralModel' object has no attribute 'get_bounding_box'
+12:50:42 | INFO     | src.ui.main_window:_invalidate_snap_cache:374 - Snap manager cache invalidated (grid points updated)
+12:50:42 | WARNING  | src.core.element:_tessellate:292 - Cannot tessellate: No module named 'OCC'
+12:50:42 | ERROR    | src.core.element:get_bounding_box:396 - Failed to get bounding box: No module named 'OCC'
+12:50:42 | WARNING  | src.core.element:_tessellate:292 - Cannot tessellate: No module named 'OCC'
+12:50:42 | ERROR    | src.core.element:get_bounding_box:396 - Failed to get bounding box: No module named 'OCC'
+Traceback (most recent call last):
+  File "C:\Users\Daradudai\Schmekla-Test-Launch\src\ui\main_window.py", line 730, in create_grid
+    self.viewport.update_display()
+  File "C:\Users\Daradudai\Schmekla-Test-Launch\src\ui\viewport.py", line 820, in update_display
+    self._draw_structural_grids()
+  File "C:\Users\Daradudai\Schmekla-Test-Launch\src\ui\viewport.py", line 1013, in _draw_structural_grids
+    min_pt, max_pt = self.model.get_bounding_box()
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'StructuralModel' object has no attribute 'get_bounding_box'

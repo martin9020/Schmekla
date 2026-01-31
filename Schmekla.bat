@@ -25,12 +25,20 @@ if not defined VENV_DIR (
         echo [Schmekla] Local venv not found.
         echo [Schmekla] Creating local virtual environment for portability...
         
+        REM Try to use Python 3.12 (Recommended), allowing install if missing
+        set PYLAUNCHER_ALLOW_INSTALL=1
         py -3.12 -m venv %LOCAL_VENV%
+        
         if errorlevel 1 (
-            echo [ERROR] Failed to create virtual environment.
-            echo Please ensure Python 3.12 is installed and available via 'py -3.12'.
-            pause
-            exit /b 1
+            echo [Schmekla] Python 3.12 setup failed. Checking for Python 3.13...
+            py -3.13 -m venv %LOCAL_VENV%
+            if errorlevel 1 (
+                echo [ERROR] Failed to create virtual environment.
+                echo Please ensure Python 3.12 or 3.13 is installed.
+                pause
+                exit /b 1
+            )
+            echo [Schmekla] Warning: Using Python 3.13. Some dependencies might be experimental.
         )
         echo [Schmekla] Local virtual environment created.
     ) else (

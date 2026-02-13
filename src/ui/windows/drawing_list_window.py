@@ -128,37 +128,30 @@ class DrawingListWindow(QMainWindow):
             self.table.setItem(i, 5, QTableWidgetItem(str(drawing.id)))
             
     def _on_number_modified(self):
-        """Handle numbering request."""
-        # Check if numbering is needed
-        # In a real app, we might check modification flags. 
-        # Here we just run the numbering process.
-        
-        # TODO: Show progress dialog
+        """Handle numbering request - renumber all elements from scratch."""
         try:
-            # We need to access the numbering logic. 
-            # The model has a numbering manager, but the actual logic to renumber everything
-            # might need to be invoked carefully.
-            
-            # For now, we'll renumber all elements that don't have numbers or are modified.
-            # Schmekla's NumberingManager calculates signatures.
-            
             elements = self.model.get_all_elements()
+            # Filter out system elements (grids, levels, welds, bolts)
+            from src.core.element import ElementType
+            skip_types = [ElementType.GRID, ElementType.LEVEL, ElementType.WELD, ElementType.BOLT_GROUP]
+            elements = [el for el in elements if el.element_type not in skip_types]
+
+            if not elements:
+                QMessageBox.information(self, "Numbering", "No elements to number.")
+                return
+
+            # Reset numbering manager so it assigns fresh numbers
+            self.model.numbering.reset()
+
             count = 0
             for el in elements:
-                # Calculate signature and get number
-                # This logic is partly inside StructuralModel.add_element, 
-                # but we should probably expose a "renumber_all" method in NumberingManager or Model.
-                
-                # Let's use the NumberingManager directly
-                if hasattr(self.model.numbering, 'get_number_for_element'):
-                    new_num = self.model.numbering.get_number_for_element(el)
-                    if el.part_number != new_num:
-                        el.part_number = new_num
-                        count += 1
-            
-            QMessageBox.information(self, "Numbering", f"Numbering complete. {count} elements updated.")
+                new_num = self.model.numbering.get_number_for_element(el)
+                el.part_number = new_num
+                count += 1
+
+            QMessageBox.information(self, "Numbering", f"Numbered {count} elements.")
             self.model.model_changed.emit()
-            
+
         except Exception as e:
             logger.error(f"Numbering failed: {e}")
             QMessageBox.critical(self, "Error", f"Numbering failed: {e}")

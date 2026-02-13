@@ -43,8 +43,8 @@ echo.
 echo [4/5] Installing dependencies (this may take a few minutes)...
 call venv\Scripts\activate.bat
 
-pip install --upgrade pip
-pip install -r requirements.txt
+"venv\Scripts\python.exe" -m pip install --upgrade pip
+"venv\Scripts\python.exe" -m pip install -r requirements.txt
 if errorlevel 1 (
     echo ERROR: Failed to install dependencies
     pause

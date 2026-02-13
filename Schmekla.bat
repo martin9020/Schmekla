@@ -77,7 +77,7 @@ exit /b 1
 REM Run Schmekla
 echo [Schmekla] Starting application...
 echo ------------------------------------------
-"%VENV_DIR%\Scripts\python.exe" -m src.main
+"%VENV_DIR%\Scripts\python.exe" dev_reload.py
 
 REM Keep window open if there was an error
 if errorlevel 1 (

@@ -76,7 +76,7 @@ typing-inspection==0.4.2
 typing_extensions==4.15.0
 typish==1.9.3
 urllib3==2.6.3
-vtk==9.3.1
+vtk==9.5.2
 win32_setctime==1.2.0
 wslink==2.5.0
 yarl==1.22.0

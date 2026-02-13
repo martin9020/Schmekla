@@ -317,12 +317,10 @@ class MainWindow(QMainWindow):
     def _setup_shortcuts(self):
         """Setup keyboard shortcuts."""
         # ESC - Cancel current operation / Return to IDLE
-        esc_shortcut = QShortcut(QKeySequence(Qt.Key_Escape), self)
-        esc_shortcut.activated.connect(self._on_escape_pressed)
-        
-        # Ctrl+L - Drawing List (Tekla style)
-        drawing_list_shortcut = QShortcut(QKeySequence("Ctrl+L"), self)
-        drawing_list_shortcut.activated.connect(self._show_drawing_list)
+        self._esc_shortcut = QShortcut(QKeySequence(Qt.Key_Escape), self)
+        self._esc_shortcut.activated.connect(self._on_escape_pressed)
+
+
 
     def _show_drawing_list(self):
         """Show drawing list window."""

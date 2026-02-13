@@ -202,6 +202,29 @@ try:
             # Left button not down in IDLE mode - let parent handle (camera control for other buttons)
             super().mouseMoveEvent(event)
 
+        def event(self, ev):
+            """Intercept Ctrl+key events and trigger matching QActions directly.
+
+            VTK claims all key events, preventing Qt shortcuts from firing.
+            We match Ctrl combos against main window QActions and trigger them.
+            """
+            from PySide6.QtCore import QEvent
+            from PySide6.QtGui import QKeySequence, QAction
+            if ev.type() == QEvent.KeyPress:
+                if ev.modifiers() & Qt.KeyboardModifier.ControlModifier:
+                    seq = QKeySequence(int(ev.modifiers()) | ev.key())
+                    main_win = self.window()
+                    if main_win:
+                        for action in main_win.findChildren(QAction):
+                            if action.shortcut().matches(seq) == QKeySequence.ExactMatch:
+                                action.trigger()
+                                return True
+                    return True  # Eat Ctrl+key even if no match (don't send to VTK)
+            if ev.type() == QEvent.ShortcutOverride:
+                if ev.modifiers() & Qt.KeyboardModifier.ControlModifier:
+                    return True  # Claim it so we get the KeyPress next
+            return super().event(ev)
+
         def _fake_left_button_for_rotate(self, event, press=True):
             """Fake a left button event to VTK for Ctrl+Right rotation.
 

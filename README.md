@@ -2,7 +2,7 @@
 
 **Structural Modeling Application with AI-Assisted Design**
 
-Schmekla is a custom structural modeling application that creates 3D steel and concrete models, exports to IFC format for Tekla Structures compatibility, and features Claude Code CLI integration for natural language model creation and automatic model generation from plan drawings.
+Schmekla is a custom structural modeling application that creates 3D steel and concrete models, exports to open IFC formats for downstream BIM coordination, and features Claude Code CLI integration for natural language model creation and assisted model generation from plan drawings. Tekla Structures interoperability is a validation target, but compatibility claims must be proven with public documentation and clean test artifacts before being treated as product guarantees.
 
 ## Features
 
@@ -25,7 +25,7 @@ Schmekla is a custom structural modeling application that creates 3D steel and c
 
 ### Prerequisites
 
-- Python 3.12 or higher (3.11+ compatible)
+- Python support target: 3.11+ project metadata; 3.12+ launcher path pending SUP-2
 - Windows 10/11 (primary target)
 - Claude Code CLI installed (for AI features)
 
@@ -137,20 +137,22 @@ Access via **Tools > Numbering Settings**:
 - Preview numbering before applying
 - Renumber All with undo support
 
-### Exporting to IFC for Tekla
+### Exporting IFC for BIM Coordination
 
 1. **File > Export IFC...** (or `Ctrl+E`)
 2. Configure settings:
-   - IFC Schema: IFC2X3 (recommended for Tekla)
+   - IFC Schema: IFC2X3 or IFC4, based on the receiving workflow
    - Author and Organization fields
    - Export options (profiles, materials, custom properties, split by storey)
 3. Click **Export**
 
-### Importing to Tekla Structures
+### Validating in Tekla Structures
+
+Tekla Structures can be used as one downstream validation environment when available. Treat this as an interoperability check, not a guarantee that every Schmekla object converts to native Tekla objects.
 
 1. In Tekla: **File > Import > Insert reference model**
 2. Select the exported `.ifc` file
-3. To convert to native objects:
+3. If validating conversion to native objects:
    - **Manage > Convert IFC objects**
    - Select objects and click **Convert**
 
@@ -266,15 +268,15 @@ Access via **Tools > Numbering Settings**:
 | **Claude Terminal** | Bottom dock | Claude CLI launcher with project folder integration |
 | **Status Bar** | Bottom | Operation status, coordinates with snap type, element count, units (mm) |
 
-## Workflow: From Drawing to Tekla
+## Workflow: From Drawing to IFC Validation
 
 1. **Prepare your drawing**: Scan or export floor plan as PNG/JPG/PDF
 2. **Import in Schmekla**: Claude > Import Plan (`Ctrl+I`)
-3. **Review generated model**: Check elements in 3D viewport
+3. **Review generated model**: Check elements in 3D viewport and verify all AI-assisted output before engineering use
 4. **Make adjustments**: Add/modify elements, set profiles and materials
 5. **Configure numbering**: Tools > Numbering Settings for part marks
 6. **Export to IFC**: File > Export IFC (`Ctrl+E`)
-7. **Import to Tekla**: Insert as reference model, then convert
+7. **Validate downstream**: Open in an IFC viewer and, when available, insert into Tekla Structures as a reference model for compatibility testing
 
 ## Limitations
 
@@ -282,10 +284,11 @@ Access via **Tools > Numbering Settings**:
 - **Reinforcement**: Rebar must be added in Tekla
 - **Complex geometry**: Some curved/complex shapes may need simplification
 - **OCC fallback**: If CadQuery/OCP solid generation fails, elements render as simplified geometry
+- **Engineering use**: Schmekla output is not certified for design, detailing, fabrication, or construction without review and approval by a qualified structural engineer
 
 ## Technology Stack
 
-- **Python 3.12+**: Core language
+- **Python 3.11+/3.12+ target**: Core language metadata supports 3.11+; launcher and supported production baseline remain pending SUP-2
 - **PySide6 (Qt 6)**: Desktop UI framework
 - **PyVista + VTK**: 3D visualization and interaction
 - **CadQuery + OCP**: Parametric solid geometry (OpenCascade)
@@ -296,6 +299,10 @@ Access via **Tools > Numbering Settings**:
 ## Development
 
 See [CLAUDE.md](CLAUDE.md) for development guidelines, agent ecosystem, and architecture details.
+
+### Company Planning Docs
+
+The current mission, onboarding brief, capability map, phase plan, and risk register live in [`docs/company/`](docs/company/). New implementation work should start from those documents before changing code.
 
 ### Running Tests
 

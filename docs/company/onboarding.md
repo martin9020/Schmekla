@@ -9,7 +9,7 @@ Schmekla is a Python desktop structural modeling application. The main stack is:
 - PyVista and VTK for the 3D viewport.
 - CadQuery / OCP for solid geometry where available.
 - IfcOpenShell for IFC export.
-- pytest for tests. In the current shell, `pytest` currently runs under Python 3.13.11 with 30 passing tests, and `pytest --cov=src` currently runs under Python 3.13.11 with 30 passing tests.
+- pytest for tests. In the current shell, `pytest` currently runs under Python 3.13.11 with 31 passing tests, and `pytest --cov=src` currently runs under Python 3.13.11 with 31 passing tests.
 - Claude Code CLI integration for user-assisted modeling and plan import.
 
 The current repository already contains working application code rather than a greenfield scaffold.
@@ -55,8 +55,8 @@ py -m pytest
 
 Results:
 
-- `pytest`: 30 passing tests under Python 3.13.11.
-- `pytest --cov=src`: 30 passing tests under Python 3.13.11.
+- `pytest`: 31 passing tests under Python 3.13.11.
+- `pytest --cov=src`: 31 passing tests under Python 3.13.11.
 - `py -m pytest`: Python 3.14 launched, but pytest was not installed.
 
 The next engineering task should establish a reproducible supported-version test environment, preferably by using the project launcher or an explicit `.venv` with the pinned requirements. Until [SUP-2](/SUP/issues/SUP-2) completes, README Python version guidance is a target rather than a production support baseline.

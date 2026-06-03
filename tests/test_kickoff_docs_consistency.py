@@ -15,8 +15,8 @@ def test_python_and_pytest_baseline_docs_match_current_evidence():
 
     assert "Python support target: 3.11+ project metadata; 3.12+ launcher path pending SUP-2" in readme
     assert "Python support target is not yet a production baseline" in onboarding
-    assert "pytest` currently runs under Python 3.13.11 with 30 passing tests" in onboarding
-    assert "pytest --cov=src` currently runs under Python 3.13.11 with 30 passing tests" in onboarding
+    assert "pytest` currently runs under Python 3.13.11 with 31 passing tests" in onboarding
+    assert "pytest --cov=src` currently runs under Python 3.13.11 with 31 passing tests" in onboarding
     assert "py -m pytest` still launches Python 3.14 without pytest installed" in onboarding
     assert "not on PATH" not in onboarding
     assert "command not found" not in onboarding
